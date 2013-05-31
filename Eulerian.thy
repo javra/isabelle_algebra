@@ -132,8 +132,10 @@ proof-
   also
   from assms
   have h1: "length(p) < length(p @ q)" by(simp)
-  from assms have "take(length(p) - 1) p = take(length(p) - 1) p@q" sorry
-  hence "p ! (length(p) - 1) = (p @ q) ! (length(p) - 1)" by(simp)
+  from assms have "take(length(p) - 1) p = take(length(p) - 1) (p@q)" by(simp)
+  find_theorems "(?p @ ?q) ! ?n"  
+  from assms have "length(p) - 1 < length(p)" by(simp)
+  hence "p ! (length(p) - 1) = (p @ q) ! (length(p) - 1)" by(simp add:List.nth_append)
   finally have l1:"last p = (p @ q) ! (length(p) - 1)".
   have "q = drop(length(p))(p@q)" by(simp)
   hence "hd q = hd(drop(length(p))(p@q))" by(simp)
