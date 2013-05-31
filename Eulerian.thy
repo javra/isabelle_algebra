@@ -14,7 +14,7 @@ definition nodes :: "'node graph \<Rightarrow> 'node set"
   where "nodes G = fst ` (set_of G) \<union> snd ` (set_of G)"
 
 definition path :: "'node graph \<Rightarrow> ('node \<times> 'node) list \<Rightarrow> bool"
-  where "path G p \<equiv> (multiset_of p \<le> G) \<and> (\<forall>i. (i < length p) \<longrightarrow> (snd (p ! i) = fst (p ! (i + 1))))"
+  where "path G p \<equiv> (set p \<subseteq> set_of G) \<and> (\<forall>i. (i + 1 < length p) \<longrightarrow> (snd (p ! i) = fst (p ! (i + 1))))"
 
 definition eulerPath :: "'node graph \<Rightarrow> ('node \<times> 'node) list \<Rightarrow> bool"
   where "eulerPath G es = ((path G es) \<and> fst (hd es) = snd (last es) \<and> G = multiset_of es)"
@@ -43,7 +43,7 @@ proof-
     by (simp add:nodes_def)
     thus thesis
   proof(rule disjE)
-    assume "n \<in> fst ` set_of G"
+    assume "n \<in> fst ` set_of G" 
     hence "\<exists>e. e \<in># G \<and> n = fst e" by auto
     then obtain e where "e \<in># G \<and> n = fst e" by (rule exE)
     hence "e \<in># G \<and> (fst e = n \<or> snd e = n)" by simp
@@ -61,51 +61,73 @@ lemma subPathDrop:
   assumes "path G p" "i < length p"
   shows "path G (drop i p)"
 using assms proof-
-  have "multiset_of (drop i p) \<le> multiset_of p" sorry
+  have "set (drop i p) \<subseteq>  set p" by (simp add:List.set_drop_subset)
   also
-  from `path G p` have "multiset_of p \<le> G" by (simp add:path_def)
+  from `path G p` have "set p \<subseteq> set_of G" by (simp add:path_def)
   finally
-  have "multiset_of (drop i p) \<le> G".
-  have "\<forall>
-  find_theorems Name:path_def
-oops
+  have t1:"set (drop i p) \<le> set_of G".
+  have t2:"\<forall>j. (j + 1 < length (drop i p)) \<longrightarrow> (snd ((drop i p) ! j) = fst ((drop i p) ! (j + 1)))"
+  proof(rule allI)
+    fix j
+    show "(j + 1 < length (drop i p)) \<longrightarrow> (snd ((drop i p) ! j) = fst ((drop i p) ! (j + 1)))"
+    proof(rule impI)
+      assume "j + 1 < length (drop i p)"
+      also
+      have "... = length p - i" by simp
+      finally
+      have s2:"j + i + 1 < length p" by simp
+      hence s1:"(drop i p) ! j = p ! (i + j)" by (simp add:List.nth_drop)
+      hence "snd ((drop i p) ! j) = snd (p ! (i + j))" by simp
+      also
+      from s2 `path G p`  have "... = fst (p ! (i + j + 1))" by (simp add:path_def)
+      also
+      from s2 have "... = fst((drop i p) ! (j +1))" by (simp add:List.nth_drop)
+      finally show "snd (drop i p ! j) = fst (drop i p ! (j + 1))".
+    qed
+  qed
+  from t1 t2 show "path G (drop i p)" by (simp add:path_def)
+qed
+
+lemma subPathTake:
+  assumes "path G p" "i < length p"
+  shows "path G (take i p)"
+using assms proof-
+  have "set (take i p) \<subseteq>  set p" by (simp add:List.set_take_subset)
+  also
+  from `path G p` have "set p \<subseteq> set_of G" by (simp add:path_def)
+  finally
+  have t1:"set (take i p) \<le> set_of G".
+  have t2:"\<forall>j. (j + 1 < length (take i p)) \<longrightarrow> (snd ((take i p) ! j) = fst ((take i p) ! (j + 1)))"
+  proof(rule allI)
+    fix j
+    show "(j + 1 < length (take i p)) \<longrightarrow> (snd ((take i p) ! j) = fst ((take i p) ! (j + 1)))"
+    proof(rule impI)
+      assume "j + 1 < length (take i p)"
+      also
+      have "... =  min (length p) i" by simp
+      also
+      from `i < length p` have "... = i" by simp
+      finally
+      have s2:"j + 1 < i" by simp
+      with `i < length p` have s3:"j + 1< length p" by simp
+      from s2 have s1:"(take i p) ! j = p ! j" by (simp add:List.nth_take)
+      hence "snd ((take i p) ! j) = snd (p ! j)" by simp
+      also
+      from s3 `path G p`  have "... = fst (p ! (j + 1))" by (simp add:path_def)
+      also
+      find_theorems name:List.nth_take
+      from s2 have "... = fst((take i p) ! (j + 1))" by (simp add:List.nth_take)
+      finally show "snd (take i p ! (j)) = fst (take i p ! (j + 1))".
+    qed
+  qed
+  from t1 t2 show "path G (take i p)" by (simp add:path_def)
+qed
 
 lemma pathSplit:
   assumes "path G (p @ q)" "p \<noteq> []" "q \<noteq> []"
   shows "snd (last p) = fst (hd q)"
 proof-
-  find_theorems "?p @ ?q = ?r @ ?s"
-  have "path G (p @ q) = ((\<exists>e. (p @ q) = [e] \<and> e \<in># G) \<or>
-     (\<exists>es1 es2. p @ q = es1 @ es2 \<and> path G es1 \<and> path G es2 \<and> snd (last es1) = fst (hd es2)))"
-     by (rule path.simps)
-  with `path G (p @ q)`  have "(\<exists>e. (p @ q) = [e] \<and> e \<in># G) \<or>
-     (\<exists>es1 es2. p @ q = es1 @ es2 \<and> path G es1 \<and> path G es2 \<and> snd (last es1) = fst (hd es2))"
-     by simp
-  thus ?thesis
-  proof(rule disjE)
-    assume a:"\<exists>e. p @ q = [e] \<and> e \<in># G"
-    then obtain e where edef:"p @ q = [e]" by auto
-    from `p \<noteq> []` `q \<noteq> []` have "length p > 0" "length q > 0" by simp_all
-    hence "(length p + length q) > 1" sorry
-    hence "length (p @ q) > 1" by simp
-    with edef have  "length [e] > 1" by simp
-    hence "False" by simp
-    thus ?thesis..
-  next
-    assume a:"\<exists>es1 es2. p @ q = es1 @ es2 \<and> path G es1 \<and> path G es2 \<and> snd (last es1) = fst (hd es2)"
-    then obtain p1 p2 where "p @ q = p1 @ p2 \<and> path G p1 \<and> path G p2 \<and> snd (last p1) = fst (hd p2)"
-      by auto
-    hence "p @ q = p1 @ p2"..
-    hence "\<exists>us. p = p1 @ us \<and> us @ q = p2 \<or> p @ us = p1 \<and> q = us @ p2"
-      by (simp add:List.append_eq_append_conv2)
-    then obtain us where "p = p1 @ us \<and> us @ q = p2 \<or> p @ us = p1 \<and> q = us @ p2"..
-    thus ?thesis
-    proof(rule disjE)
-      assume "p = p1 @ us \<and> us @ q = p2"
-      
-    qed
-  qed
-qed
+
 oops
 
 lemma eulerianObtainNext:
