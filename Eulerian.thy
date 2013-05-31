@@ -127,21 +127,21 @@ lemma pathSplit:
   assumes "path G (p @ q)" "p \<noteq> []" "q \<noteq> []"
   shows "snd (last p) = fst (hd q)"
 proof-
-  from assms
-  have "last p = p ! (length(p) - 1)" by(simp add:List.last_conv_nth)
-  also
-  from assms
+    from assms
+    have "last p = p ! (length(p) - 1)" by(simp add:List.last_conv_nth)
+    also
+    from assms
   have h1: "length(p) < length(p @ q)" by(simp)
-  from assms have "take(length(p) - 1) p = take(length(p) - 1) (p@q)" by(simp)
-  find_theorems "(?p @ ?q) ! ?n"  
-  from assms have "length(p) - 1 < length(p)" by(simp)
-  hence "p ! (length(p) - 1) = (p @ q) ! (length(p) - 1)" by(simp add:List.nth_append)
+    from assms have "take(length(p) - 1) p = take(length(p) - 1) (p@q)" by(simp)
+    find_theorems "(?p @ ?q) ! ?n"  
+    from assms have "length(p) - 1 < length(p)" by(simp)
+    hence "p ! (length(p) - 1) = (p @ q) ! (length(p) - 1)" by(simp add:List.nth_append)
   finally have l1:"last p = (p @ q) ! (length(p) - 1)".
-  have "q = drop(length(p))(p@q)" by(simp)
-  hence "hd q = hd(drop(length(p))(p@q))" by(simp)
-  also from `length(p) < length (p@q)`
-  have "... = (p@q) ! length(p)" by(rule List.hd_drop_conv_nth)
-  also from `p \<noteq> []` have "... = (p@q) ! ((length(p) - 1) + 1)" by(simp)
+    have "q = drop(length(p))(p@q)" by(simp)
+    hence "hd q = hd(drop(length(p))(p@q))" by(simp)
+    also from `length(p) < length (p@q)`
+    have "... = (p@q) ! length(p)" by(rule List.hd_drop_conv_nth)
+    also from `p \<noteq> []` have "... = (p@q) ! ((length(p) - 1) + 1)" by(simp)
   finally have l2:"hd q = (p@q) ! ((length(p) - 1) + 1)".
   from l1 have "snd (last p) = snd((p @ q) ! (length(p) - 1))" by(simp)
   also from assms have "snd((p @ q) ! (length(p) - 1)) = fst((p@q) ! ((length(p) - 1) + 1))" by(simp add:path_def)
@@ -214,27 +214,14 @@ proof-
     assume "e \<in># G \<and> fst e = n"
     with a1 show thesis.
   next
-    assume "e \<in># G \<and> snd e = n"
+    assume a2:"e \<in># G \<and> snd e = n"
     hence "e \<in># G"..
-    with `eulerPath G p` have  "e \<in># multiset_of p" by(simp add:eulerPath_def)
-    hence "e \<in> set p" by (simp add:in_multiset_in_set)
-    hence "\<exists>i < length p.  p!i = e" by (simp add:in_set_conv_nth)
-    then obtain i where "p!i = e" by auto
-    show thesis
-    proof(cases "i + 1 < length p + 1")
-      case True
-      obtain e' where "e' = p!(i+1)" by auto
-      hence "e' \<in> set p" sorry
-      hence "e' \<in># multiset_of p" sorry
-      with `eulerPath G p` have g1:"e' \<in># G" by (simp add:eulerPath_def)
-      have "fst e' = n" sorry
-      with g1 have "e' \<in># G \<and> fst e' = n"..
-      with a1 show thesis.
-    next
-      case False
+    with `eulerPath G p` obtain e' where s1:"e' \<in># G \<and> snd e = fst e'" by (rule eulerianObtainNext)
+    from a2 have "snd e = n"..
+    with s1 have  "e' \<in># G \<and> fst e' = n" by simp
+    with a1 show thesis.
   qed
 qed
-oops
 
 lemma eulerianSplit:
   assumes "eulerPath G p" "n \<in> (nodes G)"
