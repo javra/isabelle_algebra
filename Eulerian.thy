@@ -127,8 +127,25 @@ lemma pathSplit:
   assumes "path G (p @ q)" "p \<noteq> []" "q \<noteq> []"
   shows "snd (last p) = fst (hd q)"
 proof-
-
-oops
+  from assms
+  have "last p = p ! (length(p) - 1)" by(simp add:List.last_conv_nth)
+  also
+  from assms
+  have h1: "length(p) < length(p @ q)" by(simp)
+  from assms have "take(length(p) - 1) p = take(length(p) - 1) p@q" sorry
+  hence "p ! (length(p) - 1) = (p @ q) ! (length(p) - 1)" by(simp)
+  finally have l1:"last p = (p @ q) ! (length(p) - 1)".
+  have "q = drop(length(p))(p@q)" by(simp)
+  hence "hd q = hd(drop(length(p))(p@q))" by(simp)
+  also from `length(p) < length (p@q)`
+  have "... = (p@q) ! length(p)" by(rule List.hd_drop_conv_nth)
+  also from `p \<noteq> []` have "... = (p@q) ! ((length(p) - 1) + 1)" by(simp)
+  finally have l2:"hd q = (p@q) ! ((length(p) - 1) + 1)".
+  from l1 have "snd (last p) = snd((p @ q) ! (length(p) - 1))" by(simp)
+  also from assms have "snd((p @ q) ! (length(p) - 1)) = fst((p@q) ! ((length(p) - 1) + 1))" by(simp add:path_def)
+  also from l2 have "fst((p@q) ! ((length(p) - 1) + 1)) = fst(hd q)" by(simp)
+  finally show ?thesis.
+qed
 
 lemma eulerianObtainNext:
   assumes "eulerPath G p" "e \<in># G"
