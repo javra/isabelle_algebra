@@ -58,7 +58,7 @@ proof-
 qed
 
 lemma subPathDrop:
-  assumes "path G p" "i < length p"
+  assumes "path G p"
   shows "path G (drop i p)"
 using assms proof-
   have "set (drop i p) \<subseteq>  set p" by (simp add:List.set_drop_subset)
@@ -89,9 +89,15 @@ using assms proof-
 qed
 
 lemma subPathTake:
-  assumes "path G p" "i < length p"
+  assumes "path G p" 
   shows "path G (take i p)"
-using assms proof-
+using assms proof(cases "i < length p")
+  case False
+  hence "take i p = p" by simp
+  hence "path G p = path G (take i p)" by simp
+  with `path G p` show ?thesis by simp
+next
+  case True
   have "set (take i p) \<subseteq>  set p" by (simp add:List.set_take_subset)
   also
   from `path G p` have "set p \<subseteq> set_of G" by (simp add:path_def)
@@ -197,23 +203,37 @@ next
           hence "i < length p" by simp
           hence "snd((p @ q) ! i) = snd (p ! i)" by (simp add:List.nth_append)
           also
-          find_theorems name:path_def
           from `i + 1 < length p` s1 have "... = fst (p ! (i + 1))" by simp
-          also
-          from `i + 1 < length p` have "... = fst ((p @ q) ! (i + 1))" by (simp add:List.nth_append)
-          finally show "snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))".
+         also
+         from `i + 1 < length p` have "... = fst ((p @ q) ! (i + 1))" by (simp add:List.nth_append)
+         finally show "snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))".
+        qed
+      next
+        case False
+        hence "i + 1 > length p" by simp
+        with `i + 1 < length p + length q` have "i - length p + 1 < length q" by simp
+        hence "i - length p < length q" by simp
+        from `path G q` have "\<forall>i. i + 1 < length q \<longrightarrow> snd (q ! i) = fst (q ! (i + 1))"
+          by (simp add:path_def)
+        hence "i - length p + 1 < length q \<longrightarrow> snd (q ! (i - length p)) = fst (q ! (i - length p + 1))"
+          by (rule allE)
+        with `i - length p + 1 < length q`
+        have s1:"snd (q ! (i - length p)) = fst (q ! (i - length p + 1))" by simp
+        from `i + 1 > length p` have "\<not> (i < length p)" "\<not> (i + 1 < length p)" by simp_all
+        hence "snd((p @ q) ! i) = snd (q ! (i - length p))" by (simp add:List.nth_append)
+        also
+        from `(i - length p) + 1 < length q` s1 have "... = fst (q ! (i - length p + 1))" by simp
+        also
+        with `i + 1 > length p` `\<not> (i < length p)`  have "... = fst (q ! (i + 1 - length p))"
+          sorry
+        also
+        from `\<not> (i + 1 < length p)` have "... = fst ((p @ q) ! (i + 1))" by (simp add:List.nth_append)
+        finally show "snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))".
+      qed
     qed
-    next
-      case False
-      hence "i + 1 > length p" by simp
-      with `i + 1 < length p + length q` have "i + 1 - length p < length q" by simp
-      
-      from `path G q` have "\<forall>i. i + 1 < length q \<longrightarrow> snd (q ! i) = fst (q ! (i + 1))"
-        by (simp add:path_def)
-      
   qed
+  with s1 show "path G (p @ q)" by (simp add:path_def)
 qed
-oops
 
 lemma eulerianObtainNext:
   assumes "eulerPath G p" "e \<in># G"
@@ -303,6 +323,8 @@ lemma pathFromEulerPath:
   assumes "eulerPath G ep" "m \<in> nodes G" "n \<in> nodes G"
   obtains p where "path G p \<and> (fst (hd p) = n) \<and> (snd (last p) = m)"
 using assms proof-
+  assume a1:"\<And>p. path G p \<and> fst (hd p) = n \<and> snd (last p) = m \<Longrightarrow> thesis"
+  
   from `eulerPath G ep` `n \<in> nodes G`
   obtain en where "en \<in># G \<and> fst en = n" by (rule eulerianObtainNode)
   hence "en \<in># G" "fst en = n" by simp_all
@@ -311,6 +333,7 @@ using assms proof-
   hence "en \<in> set ep" by (simp add:Multiset.in_multiset_in_set)
   hence "\<exists>i < length ep. (ep ! i) = en" by (simp add:List.in_set_conv_nth)
   then obtain i where "i < length ep" "ep ! i = en" by auto
+  hence "ep \<noteq> []" by auto
 
   from `eulerPath G ep` `m \<in> nodes G`
   obtain em where "em \<in># G \<and> fst em = m" by (rule eulerianObtainNode)
@@ -323,14 +346,67 @@ using assms proof-
 
   from `eulerPath G ep` have "path G ep \<and> fst (hd ep) = snd (last ep) \<and> G = multiset_of ep"
     by (simp add:eulerPath_def[symmetric])
-  hence "path G ep" by auto
+  hence epDefs:"path G ep" "fst (hd ep) = snd (last ep)" by auto
   show thesis
   proof(cases "i \<le> j")
     case True
     show thesis
     proof(cases "i = j")
       case True
-      find_theorems "(drop ?i ?p) @ (take ?i ?p)"
+      hence "ep ! i = ep ! j" by simp
+      with `ep ! i = en` `fst en = n` `fst em = m` `ep ! j = em` 
+      have "m = n" by simp
+      show thesis
+      proof(cases "i = 0")
+        case True
+        from `ep \<noteq> []` have "fst (hd ep) = fst(ep ! 0)" by (simp add:List.hd_conv_nth)
+        also
+        with `ep ! i = en` True have "... = fst en" by simp
+        also
+        with `fst en = n` have "... = n" by simp
+        finally have "fst (hd ep) = n".
+        from epDefs have "snd (last ep) = fst (hd ep)" by simp
+        also
+        with `fst (hd ep) = n` have "... = n" by simp
+        also
+        with `m = n` have "... = m" by simp
+        finally have "snd (last ep) = m".
+        with `path G ep` `fst (hd ep) = n` a1 show thesis by auto
+      next
+        case False
+        from `i < length ep` have "drop i ep \<noteq> []" by simp
+        from `path G ep` have "path G (drop i ep)" by (rule subPathDrop)
+        from `path G ep` have "path G (take i ep)" by (rule subPathTake)
+     
+        from `i < length ep` have "snd (last (drop i ep)) = snd (last ep)" by simp
+        also
+        from `fst (hd ep) = snd (last ep)` have "... = fst (hd ep)"..
+        also
+        have "... = fst(hd (take i ep))" sorry
+        finally have "snd (last (drop i ep)) = fst (hd (take i ep))".
+        from `path G (drop i ep)` `path G (take i ep)` `snd (last (drop i ep)) = fst (hd (take i ep))`
+        have s1:"path G ((drop i ep) @ (take i ep))" by(rule pathConnect)
+        from `drop i ep \<noteq> []`
+        have "fst (hd ((drop i ep) @ (take i ep))) = fst (hd (drop i ep))" by (simp add:List.hd_append2)
+        also from `i < length ep` have "... = fst (ep ! i)" by (simp add:List.hd_drop_conv_nth)
+        also from `ep ! i = en` have "... = fst en" by simp
+        also from `fst en = n` have "... = n" by simp
+        finally have s2:"fst (hd (drop i ep @ take i ep)) = n".
+        from `i < length ep` have "i mod (length ep) = i" by simp
+        hence "fst (last ((drop i ep) @ (take i ep))) = fst (last (rotate i ep))"
+          by (simp add:List.rotate_drop_take)
+
+        also from `i < length ep` have "... = fst (ep ! i)"  sorry
+        also from `i = j` have "... = fst (ep ! j)" by simp
+        also from `ep ! j = em` have "... = fst em" by simp
+        also from `fst em = m`  have "...  = m" by simp
+        finally have "fst (last (drop i ep @ take i ep)) = m".
+        with s1 s2 a1 show thesis by auto
+      qed
+    next
+      case False
+      with `i \<le> j` have "i < j"
+      
     qed
   qed
 qed
