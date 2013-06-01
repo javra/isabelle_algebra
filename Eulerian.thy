@@ -149,6 +149,72 @@ proof-
   finally show ?thesis.
 qed
 
+lemma pathConnect:
+  assumes "path G p" "path G q" "snd (last p) = fst (hd q)"
+  shows "path G (p @ q)"
+using assms proof(cases "q = []")
+  case True
+  hence "path G (p @ q) = path G p" by simp
+  with assms show "path G (p @ q)" by simp
+next
+  case False
+  from `path G p` `path G q` have "set p \<subseteq> set_of G" "set q \<subseteq> set_of G" by(simp_all add:path_def)
+  hence s1:"set (p @ q) \<subseteq> set_of G" by simp
+  have "\<forall>i. i + 1 < length (p @ q) \<longrightarrow> snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))"
+  proof(rule allI)
+    fix i
+    show "i + 1 < length (p @ q) \<longrightarrow> snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))"
+    proof(rule impI)
+      assume "i + 1 < length (p @ q)"
+      hence "i + 1 < length p + length q" by simp
+      show "snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))"
+      proof(cases "i + 1 \<le> length p")
+        case True
+        show "snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))"
+        proof(cases "i + 1 = length p")
+          case True
+          hence "i = length p - 1" "length p > 0" "i < length p" by auto
+          from `i < length p` have "snd ((p @ q) ! i) = snd (p ! i)" by (simp add:List.nth_append)
+          also
+          from `i = length p - 1` have "... = snd (p ! (length p - 1))" by simp
+          also
+          from `length p > 0` have "... = snd (last p)" by (simp add:List.last_conv_nth)
+          also
+          from assms have "... = fst (hd q)" by simp
+          also
+          from `q \<noteq> []` have "... = fst (q ! 0)" by (simp add:List.hd_conv_nth)
+          also
+          have "... = fst ((p @ q) ! (length p))" by (simp add:List.nth_append)
+          also
+          from True have "... = fst ((p @ q) ! (i + 1))" by simp
+          finally show "snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))".
+        next
+          from `path G p` have "\<forall>i. i + 1 < length p \<longrightarrow> snd (p ! i) = fst (p ! (i + 1))"
+            by (simp add:path_def)
+          hence s1:"i + 1 < length p \<longrightarrow> snd (p ! i) = fst (p ! (i + 1))" by (rule allE)
+          case False
+          with `i + 1 \<le> length p` have "i + 1 < length p" by simp
+          hence "i < length p" by simp
+          hence "snd((p @ q) ! i) = snd (p ! i)" by (simp add:List.nth_append)
+          also
+          find_theorems name:path_def
+          from `i + 1 < length p` s1 have "... = fst (p ! (i + 1))" by simp
+          also
+          from `i + 1 < length p` have "... = fst ((p @ q) ! (i + 1))" by (simp add:List.nth_append)
+          finally show "snd ((p @ q) ! i) = fst ((p @ q) ! (i + 1))".
+    qed
+    next
+      case False
+      hence "i + 1 > length p" by simp
+      with `i + 1 < length p + length q` have "i + 1 - length p < length q" by simp
+      
+      from `path G q` have "\<forall>i. i + 1 < length q \<longrightarrow> snd (q ! i) = fst (q ! (i + 1))"
+        by (simp add:path_def)
+      
+  qed
+qed
+oops
+
 lemma eulerianObtainNext:
   assumes "eulerPath G p" "e \<in># G"
   obtains e' where "e' \<in># G \<and> snd e = fst e'"
@@ -226,12 +292,48 @@ qed
 lemma eulerianSplit:
   assumes "eulerPath G p" "n \<in> (nodes G)"
   obtains e where "p = q @ (e # q') \<and> fst e = n"
-sorry
+oops
 
 lemma eulerPathRotate:
   assumes "eulerPath G (p @ q)"
   shows "eulerPath G (q @ p)"
-sorry
+oops
+
+lemma pathFromEulerPath:
+  assumes "eulerPath G ep" "m \<in> nodes G" "n \<in> nodes G"
+  obtains p where "path G p \<and> (fst (hd p) = n) \<and> (snd (last p) = m)"
+using assms proof-
+  from `eulerPath G ep` `n \<in> nodes G`
+  obtain en where "en \<in># G \<and> fst en = n" by (rule eulerianObtainNode)
+  hence "en \<in># G" "fst en = n" by simp_all
+  from `eulerPath G ep` `en \<in># G` have "en \<in># multiset_of ep"
+    by (simp add:eulerPath_def)
+  hence "en \<in> set ep" by (simp add:Multiset.in_multiset_in_set)
+  hence "\<exists>i < length ep. (ep ! i) = en" by (simp add:List.in_set_conv_nth)
+  then obtain i where "i < length ep" "ep ! i = en" by auto
+
+  from `eulerPath G ep` `m \<in> nodes G`
+  obtain em where "em \<in># G \<and> fst em = m" by (rule eulerianObtainNode)
+  hence "em \<in># G" "fst em = m" by simp_all
+  from `eulerPath G ep` `em \<in># G` have "em \<in># multiset_of ep"
+    by (simp add:eulerPath_def)
+  hence "em \<in> set ep" by (simp add:Multiset.in_multiset_in_set)
+  hence "\<exists>j < length ep. ep ! j = em" by (simp add:List.in_set_conv_nth)
+  then obtain j where "j < length ep" "ep ! j = em" by auto
+
+  from `eulerPath G ep` have "path G ep \<and> fst (hd ep) = snd (last ep) \<and> G = multiset_of ep"
+    by (simp add:eulerPath_def[symmetric])
+  hence "path G ep" by auto
+  show thesis
+  proof(cases "i \<le> j")
+    case True
+    show thesis
+    proof(cases "i = j")
+      case True
+      find_theorems "(drop ?i ?p) @ (take ?i ?p)"
+    qed
+  qed
+qed
 
 
 theorem eulerian_characterization:  
