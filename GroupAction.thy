@@ -524,43 +524,113 @@ end
 
 section{*Some Examples for Group Actions*}
 
-lemma (in group) left_mult_is_bij:
-  assumes g:"g \<in> carrier G"
-  shows "(\<lambda>h \<in> carrier G. h \<otimes> g) \<in> Bij (carrier G)"
+lemma (in group) right_mult_is_bij:
+  assumes h:"h \<in> carrier G"
+  shows "(\<lambda>g \<in> carrier G. h \<otimes> g) \<in> Bij (carrier G)"
 proof(auto simp add:Bij_def bij_betw_def inj_on_def)
   fix x y
-  assume x:"x \<in> carrier G" and y:"y \<in> carrier G" and "x \<otimes> g = y \<otimes> g"
-  with g show "x = y" by (metis r_cancel)
+  assume x:"x \<in> carrier G" and y:"y \<in> carrier G" and "h \<otimes> x = h \<otimes> y"
+  with h show "x = y" by (metis l_cancel)
 next
   fix x
   assume x:"x \<in> carrier G"
-  with g show "x \<otimes> g \<in> carrier G" by (metis m_closed)
-  from x g have "(x \<otimes> inv g) \<in> carrier G" by (metis m_closed inv_closed)
-  moreover from x g have "(x \<otimes> inv g) \<otimes> g = x" by (metis inv_closed l_inv m_assoc r_one)
-  ultimately show "x \<in> (\<lambda>h. h \<otimes> g) ` carrier G" by force
+  with h show "h \<otimes> x \<in> carrier G" by (metis m_closed)
+  from x h have "inv h \<otimes> x \<in> carrier G" by (metis m_closed inv_closed)
+  moreover from x h have "h \<otimes> (inv h \<otimes> x)  = x" by (metis inv_closed r_inv m_assoc l_one)
+  ultimately show "x \<in> op \<otimes> h ` carrier G" by force
 qed
 
-lemma (in group) left_mult_group_action:
-  shows "group_action G (\<lambda>g. \<lambda>h \<in> carrier G. h \<otimes> g) (carrier G)"
+lemma (in group) right_mult_group_action:
+  shows "group_action G (\<lambda>h. \<lambda>g \<in> carrier G. h \<otimes> g) (carrier G)"
 unfolding group_action_def group_action_axioms_def group_hom_def group_hom_axioms_def hom_def
 proof(auto simp add:is_group group_BijGroup)
-  fix g
-  assume "g \<in> carrier G"
-  thus "(\<lambda>h \<in> carrier G. h \<otimes> g) \<in> carrier (BijGroup (carrier G))" unfolding BijGroup_def by (auto simp:left_mult_is_bij)
+  fix h
+  assume "h \<in> carrier G"
+  thus "(\<lambda>g \<in> carrier G. h \<otimes> g) \<in> carrier (BijGroup (carrier G))" unfolding BijGroup_def by (auto simp:right_mult_is_bij)
 next
   fix x y
   assume x:"x \<in> carrier G" and y:"y \<in> carrier G"
-  def multx \<equiv> "(\<lambda>h\<in>carrier G. h \<otimes> x)" and  multy \<equiv> "(\<lambda>h\<in>carrier G. h \<otimes> y)"
-  with x y have "multx \<in> (Bij (carrier G))" "multy \<in> (Bij (carrier G))" by (metis left_mult_is_bij)+
-  hence "multx \<otimes>\<^bsub>BijGroup (carrier G)\<^esub> multy  = compose (carrier G) multy multx" unfolding BijGroup_def sorry  
-  show "(\<lambda>h\<in>carrier G. h \<otimes> (x \<otimes> y)) = (\<lambda>h\<in>carrier G. h \<otimes> x) \<otimes>\<^bsub>BijGroup (carrier G)\<^esub> (\<lambda>h\<in>carrier G. h \<otimes> y)"
-  sorry
+  def multx \<equiv> "(\<lambda>g\<in>carrier G. x \<otimes> g)" and  multy \<equiv> "(\<lambda>g\<in>carrier G. y \<otimes> g)"
+  with x y have "multx \<in> (Bij (carrier G))" "multy \<in> (Bij (carrier G))" by (metis right_mult_is_bij)+
+  hence "multx \<otimes>\<^bsub>BijGroup (carrier G)\<^esub> multy = (\<lambda>g\<in>carrier G. multx (multy g))" unfolding BijGroup_def by (auto simp: compose_def)
+  also have "... = (\<lambda>g\<in>carrier G. (x \<otimes> y) \<otimes> g)" unfolding multx_def multy_def
+  proof(rule restrict_ext)
+    fix g
+    assume g:"g \<in> carrier G"
+    with x y have "x \<otimes> y \<in> carrier G" "y \<otimes> g \<in> carrier G" by simp+
+    with x y g show "(\<lambda>g\<in>carrier G. x \<otimes> g) ((\<lambda>g\<in>carrier G. y \<otimes> g) g) = x \<otimes> y \<otimes> g" by (auto simp:m_assoc)
+  qed
+  finally show "(\<lambda>g\<in>carrier G. (x \<otimes> y) \<otimes> g) = (\<lambda>g\<in>carrier G. x \<otimes> g) \<otimes>\<^bsub>BijGroup (carrier G)\<^esub> (\<lambda>g\<in>carrier G. y \<otimes> g)" unfolding multx_def multy_def by simp
 qed
 
-lemma (in subgroup) inv_mult_on_rcosets_action:
-  assumes "group G"
-  shows "group_action G (\<lambda>g \<in> carrier G. \<lambda>U. U #> inv g) (rcosets H)"
-sorry
+lemma (in group) rcosets_closed:
+  assumes HG:"subgroup H G"
+  assumes g:"g \<in> carrier G"
+  assumes M:"M \<in> rcosets H"
+  shows "M #> g \<in> rcosets H"
+proof -
+  from M obtain h where h:"h \<in> carrier G" "M = H #> h" unfolding RCOSETS_def by auto
+  with g HG have "M #> g = H #> (h \<otimes> g)" by (metis coset_mult_assoc subgroup_imp_subset)
+  with HG g h show "M #> g \<in> rcosets H" by (metis rcosetsI subgroup.m_closed subgroup_imp_subset subgroup_self)
+qed
+
+lemma (in group) inv_mult_on_rcosets_is_bij:
+  assumes HG:"subgroup H G"
+  assumes g:"g \<in> carrier G"
+  shows "(\<lambda>U \<in> rcosets H. U #> inv g) \<in> Bij (rcosets H)"
+proof(auto simp add:Bij_def bij_betw_def inj_on_def)
+  fix M
+  assume "M \<in> rcosets H"
+  with HG g show "M #> inv g \<in> rcosets H" by (metis inv_closed rcosets_closed)
+next
+  fix M
+  assume M:"M \<in> rcosets H"
+  with HG g have "M #> g \<in> rcosets H" by (rule rcosets_closed)
+  moreover from M HG g have "M #> g #> inv g = M" by (metis coset_mult_assoc coset_mult_inv2 inv_closed is_group subgroup.rcosets_carrier)
+  ultimately show " M \<in> (\<lambda>U. U #> inv g) ` (rcosets H)" by auto
+next
+  fix M N x
+  assume M:"M \<in> rcosets H" and N:"N \<in> rcosets H" and "M #> inv g = N #> inv g"
+  hence "(M #> inv g) #> g = (N #> inv g) #> g" by simp
+  with HG M N g have "M #> (inv g \<otimes> g) = N #> (inv g \<otimes> g)" by (metis coset_mult_assoc is_group subgroup.m_inv_closed subgroup.rcosets_carrier subgroup_self)
+  with HG M N g have a1:"M = N" by (metis l_inv coset_mult_one is_group subgroup.rcosets_carrier)
+  {
+    assume "x \<in> M"
+    with a1 show "x \<in> N" by simp
+  }
+  {
+    assume "x \<in> N"
+    with a1 show "x \<in> M" by simp
+  }
+qed
+
+
+lemma (in group) inv_mult_on_rcosets_action:
+  assumes HG:"subgroup H G"
+  shows "group_action G (\<lambda>g. \<lambda>U \<in> rcosets H. U #> inv g) (rcosets H)"
+unfolding group_action_def group_action_axioms_def group_hom_def group_hom_axioms_def hom_def
+proof(auto simp add:is_group group_BijGroup)
+  fix h
+  assume "h \<in> carrier G"
+  with HG show "(\<lambda>U \<in> rcosets H. U #> inv h) \<in> carrier (BijGroup (rcosets H))" unfolding BijGroup_def by (auto simp:inv_mult_on_rcosets_is_bij)
+next
+  fix x y
+  assume x:"x \<in> carrier G" and y:"y \<in> carrier G"
+  def cosx \<equiv> "(\<lambda>U\<in>rcosets H. U #> inv x)" and  cosy \<equiv> "(\<lambda>U\<in>rcosets H. U #> inv y)"
+  with x y HG have "cosx \<in> (Bij (rcosets H))" "cosy \<in> (Bij (rcosets H))" by (metis inv_mult_on_rcosets_is_bij)+
+  hence "cosx \<otimes>\<^bsub>BijGroup (rcosets H)\<^esub> cosy = (\<lambda>U\<in>rcosets H. cosx (cosy U))" unfolding BijGroup_def by (auto simp: compose_def)
+  also have "... = (\<lambda>U\<in>rcosets H. U #> inv (x \<otimes> y))" unfolding cosx_def cosy_def
+  proof(rule restrict_ext)
+    fix U
+    assume U:"U \<in> rcosets H"
+    with HG y have "U #> inv y \<in> rcosets H" by (metis inv_closed rcosets_closed)
+    with x y HG U have "(\<lambda>U\<in>rcosets H. U #> inv x) ((\<lambda>U\<in>rcosets H. U #> inv y) U) = U #> inv y #> inv x" by auto
+    also from x y U HG have "... = U #> (inv y \<otimes> inv x)" by (metis coset_mult_assoc inv_closed is_group subgroup.rcosets_carrier)
+    also from x y have "... = U #> inv (x \<otimes> y)" by (metis inv_mult_group)
+    finally show "(\<lambda>U\<in>rcosets H. U #> inv x) ((\<lambda>U\<in>rcosets H. U #> inv y) U) = U #> inv (x \<otimes> y)".
+  qed
+  finally show "(\<lambda>U\<in>rcosets H. U #> inv (x \<otimes> y)) = (\<lambda>U\<in>rcosets H. U #> inv x) \<otimes>\<^bsub>BijGroup (rcosets H)\<^esub> (\<lambda>U\<in>rcosets H. U #> inv y)" unfolding cosx_def cosy_def by simp
+qed
 
 
 end
