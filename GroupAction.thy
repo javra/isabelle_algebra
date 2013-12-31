@@ -108,7 +108,7 @@ qed
 section{*The orbit relation*}
 
 definition same_orbit_rel
-  where "same_orbit_rel = {p \<in> M \<times> M.\<exists>g \<in> carrier G. (\<phi> g) (snd p) = (fst p)}"
+  where "same_orbit_rel = {p \<in> M \<times> M. \<exists>g \<in> carrier G. (\<phi> g) (snd p) = (fst p)}"
 
 definition orbits
  where "orbits = M // same_orbit_rel"

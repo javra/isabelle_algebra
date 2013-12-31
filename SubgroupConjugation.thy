@@ -11,9 +11,15 @@ imports
   "~~/src/HOL/Algebra/Sylow"
   "~~/src/HOL/Algebra/Coset"
   "~~/src/HOL/Hilbert_Choice"
-  "~/Dokumente/uni/isabelle/GroupAction"
+  "GroupAction"
 begin
 
+lemma (in subgroup) subgroup_of_subset:
+  assumes G:"group G"
+  assumes PH:"H \<subseteq> K"
+  assumes KG:"subgroup K G"
+  shows "subgroup H (G\<lparr>carrier := K\<rparr>)"
+using assms subgroup_def group.subgroup_inv_equality m_inv_closed by fastforce
 
 lemma (in group) lcosI:
      "[| h \<in> H; H \<subseteq> carrier G; x \<in> carrier G|] ==> x \<otimes> h \<in> x <# H"
@@ -278,12 +284,11 @@ qed
 
 lemma (in group) stabilizer_contains_P:
   assumes fin:"finite (carrier G)"
-  assumes P:"P \<in> (subgroups_of_size p)"
+  assumes P:"P \<in> subgroups_of_size p"
   shows "P \<subseteq> group_action.stabilizer G (conjugation_action p) P"
 proof
   from P have PG:"subgroup P G" unfolding subgroups_of_size_def by simp
-  from fin have "group_action G (conjugation_action p) (subgroups_of_size p)" by (rule acts_on_subsets)
-  hence stab:"group_action.stabilizer G (conjugation_action p) P = {g \<in> carrier G. conjugation_action p g P = P}" by (rule group_action.stabilizer_def)
+  from fin interpret conj:group_action G "(conjugation_action p)" "(subgroups_of_size p)" by (rule acts_on_subsets)
   fix x
   assume x:"x \<in> P"
   with PG have "inv x \<in> P" by (metis subgroup.m_inv_closed) 
@@ -292,9 +297,18 @@ proof
   also from `inv x \<in> P` PG have "... = x <# P" by (metis coset_join2 subgroup.mem_carrier)
   also from x PG have "... = P" by (metis lcoset_join2 subgroup.mem_carrier)
   finally have "conjugation_action p x P = P".
-  with stab xG show "x \<in> group_action.stabilizer G (conjugation_action p) P" by simp
+  with xG show "x \<in> group_action.stabilizer G (conjugation_action p) P" unfolding conj.stabilizer_def by simp
 qed
 
-
+corollary (in group) stabilizer_supergrp_P:
+  assumes fin:"finite (carrier G)"
+  assumes P:"P \<in> subgroups_of_size p"
+  shows "subgroup P (G\<lparr>carrier := group_action.stabilizer G (conjugation_action p) P\<rparr>)"
+proof -
+  from assms have "P \<subseteq> group_action.stabilizer G (conjugation_action p) P" by (rule stabilizer_contains_P)
+  moreover from P have "subgroup P G" unfolding subgroups_of_size_def by simp
+  moreover from P fin have "subgroup (group_action.stabilizer G (conjugation_action p) P) G" by (metis acts_on_subsets group_action.stabilizer_is_subgroup)
+  ultimately show ?thesis by (metis is_group subgroup.subgroup_of_subset)
+qed
 
 end

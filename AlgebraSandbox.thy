@@ -275,10 +275,7 @@ qed
 lemma (in subgroup) subgroup_of_restricted_group:
   assumes "subgroup U (G\<lparr> carrier := H\<rparr>)"
   shows "U \<subseteq> H"
-proof -
-  from assms have "U \<subseteq> carrier (G\<lparr> carrier := H\<rparr>)" by (metis subgroup_imp_subset)
-  thus "U \<subseteq> H" by simp
-qed
+using assms subgroup_imp_subset by force
 
 lemma (in subgroup) subgroup_of_subgroup:
   assumes "group G"
@@ -310,15 +307,7 @@ lemma (in subgroup) subgroup_of_subset:
   assumes PH:"H \<subseteq> K"
   assumes KG:"subgroup K G"
   shows "subgroup H (G\<lparr>carrier := K\<rparr>)"
-proof(auto simp add: subgroup_def)
-  have "subgroup H G"..
-  fix x
-  assume x:"x \<in> H"
-  hence "inv x \<in> H" by (metis m_inv_closed)
-  moreover from x PH show "x \<in> K" by auto
-  with G KG have "inv\<^bsub>G\<lparr>carrier := K\<rparr>\<^esub> x = inv x"  by (rule group.subgroup_inv_equality)
-  ultimately show "inv\<^bsub>G\<lparr>carrier := K\<rparr>\<^esub> x \<in> H" by auto
-qed
+using assms subgroup_def group.subgroup_inv_equality m_inv_closed by fastforce
 
 locale simple_group = group +
   assumes "card H > 1"
@@ -327,7 +316,7 @@ locale simple_group = group +
 lemma (in simple_group) is_simple_group: "simple_group G" by (rule simple_group_axioms)
 
 locale normal_series = group +
-  fixes \<GG> (* Was heißt "(structure)"? *)
+  fixes \<GG>
   assumes "card (hd \<GG>) = 1"
   assumes "last \<GG> = carrier G"
   assumes "\<And>i. i + 1 < length \<GG> \<Longrightarrow> (\<GG> ! i) \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>"
