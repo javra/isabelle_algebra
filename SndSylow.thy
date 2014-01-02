@@ -167,6 +167,21 @@ theorem (in snd_sylow) pa_not_zero:
   shows "p ^ a \<noteq> 0"
 by (metis less_numeral_extra(3) prime_p zero_less_prime_power)
 
+theorem (in snd_sylow) num_sylow_normalizer:
+  assumes Psize:"P \<in> subgroups_of_size (p ^ a)"
+  shows "card (rcosets\<^bsub>G\<lparr>carrier := group_action.stabilizer G (conjugation_action (p ^ a)) P\<rparr>\<^esub> P) * p ^ a = card (group_action.stabilizer G (conjugation_action (p ^ a)) P)"
+proof -
+  from finite_G interpret conj: group_action G "(conjugation_action (p ^ a))" "(subgroups_of_size (p ^ a))" by (rule acts_on_subsets)
+  from Psize have PG:"subgroup P G" and cardP:"card P = p ^ a" unfolding subgroups_of_size_def by auto
+  with finite_G have "order G = card (conj.orbit P) * card (conj.stabilizer P)" by (metis Psize acts_on_subsets group_action.orbit_size)
+  with order_G Psize have "p ^ a * m = card (subgroups_of_size (p ^ a)) * card (conj.stabilizer P)" by (metis num_eq_card_orbit)
+  moreover from Psize interpret stabGroup: group "G\<lparr>carrier := conj.stabilizer P\<rparr>" by (metis conj.stabilizer_is_subgroup subgroup_imp_group)
+  from finite_G Psize have PStab:"subgroup P (G\<lparr>carrier := conj.stabilizer P\<rparr>)" by (rule stabilizer_supergrp_P)
+  from finite_G Psize have "finite (conj.stabilizer P)" by (metis card_infinite conj.stabilizer_is_subgroup less_nat_zero_code subgroup.finite_imp_card_positive)
+  with finite_G PStab stabGroup.lagrange have "card (rcosets\<^bsub>G\<lparr>carrier := conj.stabilizer P\<rparr>\<^esub> P) * card P = order (G\<lparr>carrier := conj.stabilizer P\<rparr>)" by force
+  with cardP show ?thesis unfolding order_def by auto 
+qed
+
 theorem (in snd_sylow) num_sylow_dvd_remainder:
   shows "card (subgroups_of_size (p ^ a)) dvd m"
 proof -
@@ -174,17 +189,17 @@ proof -
   obtain P where PG:"subgroup P G" and cardP:"card P = p ^ a" by (metis sylow_thm)
   hence Psize:"P \<in> subgroups_of_size (p ^ a)" unfolding subgroups_of_size_def by simp
   with finite_G have "order G = card (conj.orbit P) * card (conj.stabilizer P)" by (metis Psize acts_on_subsets group_action.orbit_size)
-  with order_G Psize have "p ^ a * m = card (subgroups_of_size (p ^ a)) * card (conj.stabilizer P)" by (metis num_eq_card_orbit)
-  moreover
-  from Psize interpret stabGroup: group "G\<lparr>carrier := conj.stabilizer P\<rparr>" by (metis conj.stabilizer_is_subgroup subgroup_imp_group)
-  from finite_G Psize have "subgroup P (G\<lparr>carrier := conj.stabilizer P\<rparr>)" by (rule stabilizer_supergrp_P)
-  with cardP have "p ^ a dvd order (G\<lparr>carrier := conj.stabilizer P\<rparr>)" by (metis stabGroup.card_subgrp_dvd)
-  hence "p ^ a dvd card (conj.stabilizer P)" unfolding order_def by auto
-  then obtain k where "card (conj.stabilizer P) = (p ^ a) * k" unfolding dvd_def by auto
-  ultimately have "p ^ a * m = card (subgroups_of_size (p ^ a)) * p ^ a * k" by simp
+  with order_G Psize have orderEq:"p ^ a * m = card (subgroups_of_size (p ^ a)) * card (conj.stabilizer P)" by (metis num_eq_card_orbit)
+  def k \<equiv> "card (rcosets\<^bsub>G\<lparr>carrier := conj.stabilizer P\<rparr>\<^esub> P)"
+  with Psize have "k * p ^ a = card (conj.stabilizer P)" by (metis num_sylow_normalizer)
+  with orderEq have "p ^ a * m = card (subgroups_of_size (p ^ a)) * p ^ a * k" by (auto simp:nat_mult_assoc nat_mult_commute)
   hence "p ^ a * m = p ^ a * card (subgroups_of_size (p ^ a)) * k" by auto
   with pa_not_zero have "m = card (subgroups_of_size (p ^ a)) * k" by auto
   thus ?thesis unfolding dvd_def by simp
 qed
+
+theorem (in snd_sylow) p_sylow_mod_p:
+  shows "card (subgroups_of_size (p ^ a)) mod p = 1"
+sorry
 
 
