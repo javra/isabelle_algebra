@@ -478,26 +478,17 @@ proof -
   from finM have orbits_fin:"finite orbits" by (rule fin_set_imp_fin_orbits)
   hence fin_parts:"finite big_orbits" "finite {N\<in>orbits. card N = 1}" unfolding big_orbits_def by simp+
   from assms have "\<And>N. N \<in> big_orbits \<Longrightarrow> p dvd card N" unfolding big_orbits_def by (auto simp: p_dvd_orbit_size)
-  find_theorems "?p dvd ?x" "?x div ?p"
   hence orbit_div:"\<And>N. N \<in> big_orbits \<Longrightarrow> card N = (card N div p) * p" by (metis dvd_mult_div_cancel nat_mult_commute)
-  have "M = \<Union> orbits" unfolding orbits_def by (metis Union_quotient same_orbit_is_equiv)
-  hence "card M = card (\<Union> orbits)" by simp
-  also from orbits_fin have "card (\<Union> orbits) = (\<Sum>N\<in>orbits. card N)"
-  proof(rule card_Union_disjoint)
-    show "\<forall>A\<in>orbits. finite A"
-    proof(auto)
-      fix A
-      assume "A \<in> orbits"
-      with finM same_orbit_rel_def show "finite A" unfolding orbits_def by(auto dest:finite_equiv_class)
-    qed
-  next
-    show "\<forall>A\<in>orbits. \<forall>B\<in>orbits. A \<noteq> B \<longrightarrow> A \<inter> B = {}" unfolding orbits_def by (metis same_orbit_is_equiv quotient_disj)
-  qed
+  have "card M = card (\<Union> orbits)" unfolding orbits_def by (metis Union_quotient same_orbit_is_equiv)
+  also from orbits_fin have "card (\<Union> orbits) = (\<Sum>N\<in>orbits. card N)" unfolding orbits_def
+  apply(rule card_Union_disjoint)
+    defer 1
+    apply(metis same_orbit_is_equiv quotient_disj)
+    using finM same_orbit_rel_def apply(auto dest:finite_equiv_class)
+  done
   also from orbit_part orbit_disj fin_parts have "... = (\<Sum>N\<in>big_orbits. card N) + (\<Sum>N\<in>{N'\<in>orbits. card N' = 1}. card N)" by (metis (lifting) setsum.union_disjoint)
-  also from assms orbit_div have "... = (\<Sum>N\<in>big_orbits. (card N div p) * p) +  card {N'\<in>orbits. card N' = 1}" by simp
-  also from fin_parts have "... = (\<Sum>N\<in>big_orbits. (card N div p) * p) + card (\<Union>{N'\<in>orbits. card N' = 1})" by (auto simp: card_singleton_set)
-  also have "... = (\<Sum>N\<in>big_orbits. (card N div p) * p) + card fixed_points" by (metis singleton_orbits)
-  also have "... = (\<Sum>N\<in>big_orbits. card N div p) * p + card fixed_points" by (metis setsum_left_distrib)
+  also from assms orbit_div fin_parts have "... = (\<Sum>N\<in>big_orbits. (card N div p) * p) + card (\<Union>{N'\<in>orbits. card N' = 1})" by (auto simp: card_singleton_set)
+  also have "... = (\<Sum>N\<in>big_orbits. card N div p) * p + card fixed_points" using singleton_orbits by (auto simp:setsum_left_distrib)
   finally have "card M = (\<Sum>N\<in>big_orbits. card N div p) * p + card fixed_points".
   hence "card M mod p = ((\<Sum>N\<in>big_orbits. card N div p) * p + card fixed_points) mod p" by simp
   also have "... = (card fixed_points) mod p" by (metis mod_mult_self3)
@@ -520,6 +511,7 @@ next
   with H have "x \<in> carrier G" "y \<in> carrier G" by (metis subgroup.mem_carrier)+
   with grouphom show "\<phi> (x \<otimes> y) = \<phi> x \<otimes>\<^bsub>BijGroup M\<^esub> \<phi> y" by (simp add: group_hom.hom_mult)
 qed
+
 end
 
 section{*Some Examples for Group Actions*}
