@@ -309,7 +309,7 @@ qed
 
 theorem orbit_thm:
   assumes m:"m \<in> M"
-  assumes rep:"!!U. U \<in> (carrier (G Mod (stabilizer m))) \<Longrightarrow> rep U \<in> U"
+  assumes rep:"\<And>U. U \<in> (carrier (G Mod (stabilizer m))) \<Longrightarrow> rep U \<in> U"
   shows "bij_betw (\<lambda>H. (\<phi> (inv (rep H)) m)) (carrier (G Mod (stabilizer m))) (orbit m)"
 apply(simp add:bij_betw_def)
 proof(auto)
@@ -335,8 +335,7 @@ proof(auto)
     hence gh:"\<phi> (inv g) m = \<phi> (inv h) m" unfolding g_def h_def.
     from gG hinvG m have "\<phi> (g \<otimes> (inv h)) m = \<phi> g (\<phi> (inv h) m)" by (metis action_mult)
     also with gh ginvG gG m have "... = \<phi> (g \<otimes> inv g) m" by (metis action_mult)
-    also with gG have "... = \<phi> \<one> m" by simp
-    also with m have "... = m" by (metis one_is_id)
+    also with m gG have "... = m" by (auto simp: one_is_id)
     finally have "\<phi> (g \<otimes> inv h) m = m".
     with ginvhG have "(g \<otimes> inv h) \<in> stabilizer m" unfolding stabilizer_def by simp
     hence "(stabilizer m) #> (g \<otimes> inv h) = (stabilizer m) #> \<one>" by (metis coset_join2 coset_mult_one m stabSubset stabilizer_is_subgroup subgroup.mem_carrier)
@@ -617,8 +616,7 @@ next
     assume U:"U \<in> rcosets H"
     with HG y have "U #> inv y \<in> rcosets H" by (metis inv_closed rcosets_closed)
     with x y HG U have "(\<lambda>U\<in>rcosets H. U #> inv x) ((\<lambda>U\<in>rcosets H. U #> inv y) U) = U #> inv y #> inv x" by auto
-    also from x y U HG have "... = U #> (inv y \<otimes> inv x)" by (metis coset_mult_assoc inv_closed is_group subgroup.rcosets_carrier)
-    also from x y have "... = U #> inv (x \<otimes> y)" by (metis inv_mult_group)
+    also from x y U HG have "... = U #> inv (x \<otimes> y)" by (metis inv_mult_group coset_mult_assoc inv_closed is_group subgroup.rcosets_carrier)
     finally show "(\<lambda>U\<in>rcosets H. U #> inv x) ((\<lambda>U\<in>rcosets H. U #> inv y) U) = U #> inv (x \<otimes> y)".
   qed
   finally show "(\<lambda>U\<in>rcosets H. U #> inv (x \<otimes> y)) = (\<lambda>U\<in>rcosets H. U #> inv x) \<otimes>\<^bsub>BijGroup (rcosets H)\<^esub> (\<lambda>U\<in>rcosets H. U #> inv y)" unfolding cosx_def cosy_def by simp
