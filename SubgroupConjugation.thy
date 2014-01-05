@@ -81,9 +81,6 @@ next
   with invx show "inv x \<in> g <# (H #> inv g)" by simp
 qed
 
-definition (in group) subgroups_of_size ::"nat \<Rightarrow> _"
-  where "subgroups_of_size p = {H. subgroup H G \<and> card H = p}"
-
 lemma (in group) rcos_m_assoc:
      "[| M \<subseteq> carrier G; g \<in> carrier G; h \<in> carrier G |]
       ==> (M #> g) #> h = M #> (g \<otimes> h)"
@@ -309,6 +306,19 @@ proof -
   moreover from P have "subgroup P G" unfolding subgroups_of_size_def by simp
   moreover from P fin have "subgroup (group_action.stabilizer G (conjugation_action p) P) G" by (metis acts_on_subsets group_action.stabilizer_is_subgroup)
   ultimately show ?thesis by (metis is_group subgroup.subgroup_of_subset)
+qed
+
+lemma (in group) P_fixed_point_of_P_conj:
+  assumes fin:"finite (carrier G)"
+  assumes P:"P \<in> subgroups_of_size p"
+  shows "P \<in> group_action.fixed_points (G\<lparr>carrier := P\<rparr>) (conjugation_action p) (subgroups_of_size p)"
+proof -
+  from fin interpret conjG: group_action G "conjugation_action p" "subgroups_of_size p" by (rule acts_on_subsets)
+  from P have "subgroup P G" unfolding subgroups_of_size_def by simp
+  with fin interpret conjP: group_action "G\<lparr>carrier := P\<rparr>" "(conjugation_action p)" "(subgroups_of_size p)" by (metis acts_on_subsets group_action.subgroup_action)
+  from fin P have "P \<subseteq> conjG.stabilizer P" by (rule stabilizer_contains_P)
+  hence "P \<subseteq> conjP.stabilizer P" using conjG.stabilizer_def conjP.stabilizer_def by auto
+  with P show "P \<in> conjP.fixed_points" unfolding conjP.fixed_points_def by auto
 qed
 
 end

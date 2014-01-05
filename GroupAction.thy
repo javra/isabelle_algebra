@@ -222,7 +222,12 @@ next
 qed
 
 definition fixed_points :: "'c set"
-  where "fixed_points = {m \<in> M. stabilizer m = carrier G}"
+  where "fixed_points = {m \<in> M. carrier G \<subseteq> stabilizer m}"
+
+lemma fixed_point_char:
+  assumes "m \<in> M"
+  shows "(m \<in> fixed_points) = (\<forall>g\<in>carrier G. \<phi> g m = m)"
+using assms unfolding fixed_points_def stabilizer_def by force
 
 lemma orbit_contains_rep:
   assumes m:"m \<in> M"
@@ -237,10 +242,6 @@ proof
   from m have "m \<in> orbit m" by (rule orbit_contains_rep)
   from m show "m \<in> fixed_points" unfolding fixed_points_def
   proof(auto)
-    fix g
-    assume "g \<in> stabilizer m"
-    thus "g \<in> carrier G" unfolding stabilizer_def by simp
-  next
     fix g
     assume gG:"g \<in> carrier G"
     with m have "\<phi> g m \<in> orbit m" unfolding orbit_def same_orbit_rel_def Image_def
@@ -260,7 +261,7 @@ proof
   qed
 next
   assume "m \<in> fixed_points"
-  hence fixed:"stabilizer m = carrier G" unfolding fixed_points_def by simp
+  hence fixed:"carrier G \<subseteq> stabilizer m" unfolding fixed_points_def by simp
   from m have "orbit m = {m}"
   proof(auto simp add: orbit_contains_rep)
     fix n
@@ -414,7 +415,7 @@ proof
     from a obtain N where N:"N \<in> orbits" "card N = 1" "x \<in> N" by auto
     then obtain y where Norbit:"N = orbit y" "y \<in> M" unfolding orbits_def quotient_def orbit_def by auto
     hence "y \<in> N" by (metis orbit_contains_rep)
-    with N have Nsing:"N = {x}" "N = {y}" by (auto simp add: card_Suc_eq)
+    with N have Nsing:"N = {x}" "N = {y}" by (auto simp: card_Suc_eq)
     hence "x = y" by simp
     with Norbit have Norbit2:"N = orbit x" by simp
     have "{g \<in> carrier G. \<phi> g x = x} = carrier G"
