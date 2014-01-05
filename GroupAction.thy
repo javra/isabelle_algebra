@@ -277,14 +277,7 @@ theorem singleton_intersection:
   assumes B:"card B = 1"
   assumes noteq:"A \<noteq> B"
   shows "A \<inter> B = {}"
-proof(rule ccontr)
-  assume "A \<inter> B \<noteq> {}"
-  then obtain x where "x \<in> A \<inter> B" by auto
-  hence "x \<in> A" "x \<in> B" by auto
-  with A B have "A = {x}" "B = {x}" by (auto simp add: card_Suc_eq)
-  hence "A = B" by simp
-  with noteq show False..
-qed
+using assms by(auto simp:card_Suc_eq)
 
 theorem card_singleton_set:
   assumes finA:"finite A"
@@ -384,13 +377,10 @@ proof -
     fix U
     assume U:"U \<in> carrier (G Mod stabilizer m)"
     then obtain g where "g \<in> carrier G" " U = (stabilizer m) #> g" unfolding FactGroup_def RCOSETS_def by auto
-    with m have "g \<in> U" by (metis rcos_self stabilizer_is_subgroup)
-    hence "\<exists>x. x \<in> U" by auto
-    hence "(SOME x. x \<in> U) \<in> U" by (metis someI_ex)
+    with m have "(SOME x. x \<in> U) \<in> U" by (metis rcos_self stabilizer_is_subgroup someI_ex)
     with U show "rep U \<in> U" unfolding rep_def by simp
   qed
-  with m have "bij_betw (\<lambda>H. (\<phi> (inv (rep H)) m)) (carrier (G Mod (stabilizer m))) (orbit m)" by (rule orbit_thm)
-  hence bij:"card (carrier (G Mod (stabilizer m))) = card (orbit m)" by (rule bij_betw_same_card)
+  with m have  bij:"card (carrier (G Mod (stabilizer m))) = card (orbit m)" by (metis bij_betw_same_card orbit_thm)
   from fin m have "card (carrier (G Mod (stabilizer m))) * card (stabilizer m)  = order G" unfolding FactGroup_def by (simp add: stabilizer_is_subgroup lagrange)
   with bij show ?thesis by simp
 qed
@@ -621,6 +611,16 @@ next
   qed
   finally show "(\<lambda>U\<in>rcosets H. U #> inv (x \<otimes> y)) = (\<lambda>U\<in>rcosets H. U #> inv x) \<otimes>\<^bsub>BijGroup (rcosets H)\<^esub> (\<lambda>U\<in>rcosets H. U #> inv y)" unfolding cosx_def cosy_def by simp
 qed
+
+definition (in group) subgroups_of_size ::"nat \<Rightarrow> _"
+  where "subgroups_of_size p = {H. subgroup H G \<and> card H = p}"
+
+lemma (in group) inv_mult_on_subgroups_action:
+  assumes HG:"subgroup H G"
+  shows "group_action G (\<lambda>g. \<lambda>U \<in> (subgroups_of_size p). U #> inv g) (rcosets H)"
+unfolding group_action_def group_action_axioms_def group_hom_def group_hom_axioms_def hom_def
+
+sorry
 
 
 end
