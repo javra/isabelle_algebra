@@ -26,8 +26,20 @@ lemma (in group) lcosI:
 by (auto simp add: l_coset_def)
 
 lemma (in group) lcoset_join2:
-     "\<lbrakk>x \<in> carrier G;  subgroup H G;  x\<in>H\<rbrakk> \<Longrightarrow> x <# H = H"
-sorry
+  assumes H:"subgroup H G"
+  assumes g:"g \<in> H"
+  shows "g <# H = H"
+proof auto
+  fix x
+  assume x:"x \<in> g <# H"
+  then obtain h where h:"h \<in> H" "x = g \<otimes> h" unfolding l_coset_def by auto
+  with g H show "x \<in> H" by (metis subgroup.m_closed)
+next
+  fix x
+  assume x:"x \<in> H"
+  with g H have "inv g \<otimes> x \<in> H" by (metis subgroup.m_closed subgroup.m_inv_closed)
+  with x g H show "x \<in> g <# H" by (metis is_group subgroup.lcos_module_rev subgroup.mem_carrier)
+qed
 
 lemma (in group) conjugation_subgroup:
   assumes HG:"subgroup H G"

@@ -616,12 +616,4 @@ qed
 definition (in group) subgroups_of_size ::"nat \<Rightarrow> _"
   where "subgroups_of_size p = {H. subgroup H G \<and> card H = p}"
 
-lemma (in group) inv_mult_on_subgroups_action:
-  assumes HG:"subgroup H G"
-  shows "group_action G (\<lambda>g. \<lambda>U \<in> (subgroups_of_size p). U #> inv g) (rcosets H)"
-unfolding group_action_def group_action_axioms_def group_hom_def group_hom_axioms_def hom_def
-
-sorry
-
-
 end
