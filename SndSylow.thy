@@ -52,11 +52,18 @@ lemma singletonI:
   assumes "y \<in> A"
   shows "A = {y}"
 using assms by fastforce
- 
+
+lemma (in group) subgroup_finite:
+  assumes subgroup:"subgroup H G"
+  assumes finite:"finite (carrier G)"
+  shows "finite H"
+by (metis finite finite_subset subgroup subgroup_imp_subset)
 
 (*Second Sylow Theorems*)
 locale snd_sylow = sylow +
   assumes pNotDvdm:"\<not> (p dvd m)"
+
+lemma (in snd_sylow) is_snd_sylow: "snd_sylow G p a m" by (rule snd_sylow_axioms)
 
 lemma (in snd_sylow) ex_conj_sylow_group:
   assumes H:"H \<in> subgroups_of_size (p ^ b)"
@@ -210,6 +217,27 @@ proof -
   thus ?thesis unfolding dvd_def by simp
 qed
 
+(*We can restrict this locale to refer to a subgroup of order at least (p ^ a)*)
+lemma (in snd_sylow) restrict_locale:
+  assumes subgrp:"subgroup P G"
+  assumes card:"p ^ a dvd card P"
+  shows "snd_sylow (G\<lparr>carrier := P\<rparr>) p a ((card P) div (p ^ a))"
+proof -
+  from subgrp interpret groupP: group "G\<lparr>carrier := P\<rparr>" by (metis subgroup_imp_group)
+  def k \<equiv> "(card P) div (p ^ a)"
+  with card have cardP:"card P = p ^ a * k" by (auto simp: dvd_mult_div_cancel)
+  hence orderP:"order (G\<lparr>carrier := P\<rparr>) = p ^ a * k" unfolding order_def by simp
+  from cardP subgrp order_G have "p ^ a * k dvd p ^ a * m" by (metis card_subgrp_dvd)
+  hence "k dvd m" by (metis nat_mult_commute nat_mult_dvd_cancel_disj' pa_not_zero)
+  with prime_p pNotDvdm have ndvd:"\<not> (p dvd k)" by (metis dvd.dual_order.trans)
+  def PcalM \<equiv> "{s. s \<subseteq> carrier (G\<lparr>carrier := P\<rparr>) \<and> card s = p ^ a}"
+  def PRelM \<equiv> "{(N1, N2). N1 \<in> PcalM \<and> N2 \<in> PcalM \<and> (\<exists>g\<in>carrier (G\<lparr>carrier := P\<rparr>). N1 = N2 #>\<^bsub>G\<lparr>carrier := P\<rparr>\<^esub> g)}"
+  from subgrp finite_G have finite_groupP:"finite (carrier (G\<lparr>carrier := P\<rparr>))" by (auto simp:subgroup_finite)
+  interpret Nsylow: snd_sylow "G\<lparr>carrier := P\<rparr>" p a k PcalM PRelM
+     unfolding snd_sylow_def snd_sylow_axioms_def sylow_def sylow_axioms_def k_def
+     using groupP.is_group prime_p orderP finite_groupP ndvd PcalM_def PRelM_def k_def by fastforce+
+  show ?thesis using k_def by (metis Nsylow.is_snd_sylow)
+qed
 
 theorem (in snd_sylow) p_sylow_mod_p:
   shows "card (subgroups_of_size (p ^ a)) mod p = 1"
@@ -219,8 +247,7 @@ proof -
   from PG have PsubG:"P \<subseteq> carrier G" by (metis subgroup_imp_subset)
   from PG cardP have PSize:"P \<in> subgroups_of_size (p ^ a)" unfolding subgroups_of_size_def by auto
   from PG interpret groupP:group "(G\<lparr>carrier := P\<rparr>)" by (rule subgroup_imp_group)
-  have "subgroup P (G\<lparr>carrier := P\<rparr>)" using groupP.subgroup_self by force
-  with cardP have PSize2:"P \<in> groupP.subgroups_of_size (p ^ a)" using groupP.subgroups_of_size_def by auto
+  from cardP have PSize2:"P \<in> groupP.subgroups_of_size (p ^ a)" using groupP.subgroups_of_size_def groupP.subgroup_self by auto
   from finite_G interpret conjG: group_action G "conjugation_action (p ^ a)" "subgroups_of_size (p ^ a)" by (rule acts_on_subsets)
   from PG interpret conjP: group_action "G\<lparr>carrier := P\<rparr>" "conjugation_action (p ^ a)" "subgroups_of_size (p ^ a)" by (rule conjG.subgroup_action)
   from finite_G have "finite (subgroups_of_size (p ^ a))" unfolding subgroups_of_size_def subgroup_def by auto
@@ -236,37 +263,28 @@ proof -
       (*The normalizer of Q in G*)
       (*Let's first show some basic propertiers of N*)
       def N \<equiv> "conjG.stabilizer Q"
-      with Qsize have NG:"subgroup N G" by (metis conjG.stabilizer_is_subgroup)
+      def k \<equiv> "(card N) div (p ^ a)"
+      from N_def Qsize have NG:"subgroup N G" by (metis conjG.stabilizer_is_subgroup)
       then interpret groupN: group "G\<lparr>carrier := N\<rparr>" by (metis subgroup_imp_group)
-      from NG have "N \<subseteq> carrier G" by (rule subgroup_imp_subset)
-      with finite_G have finite_groupN:"finite (carrier (G\<lparr>carrier := N\<rparr>))" by (auto simp: finite_subset)
-      with Qsize N_def have QN:"subgroup Q (G\<lparr>carrier := N\<rparr>)" using stabilizer_supergrp_P by auto
+      from Qsize N_def have QN:"subgroup Q (G\<lparr>carrier := N\<rparr>)" using stabilizer_supergrp_P by auto
       (*The following proposition is used to show that P = Q later*)
       from Qsize have NfixesQ:"\<forall>g\<in>N. conjugation_action (p ^ a) g Q = Q" unfolding N_def conjG.stabilizer_def by auto
       from Qfixed have PfixesQ:"\<forall>g\<in>P. conjugation_action (p ^ a) g Q = Q" unfolding conjP.fixed_points_def conjP.stabilizer_def by auto
-      
       with PsubG have  "P \<subseteq> N" unfolding N_def conjG.stabilizer_def by auto
       with PG N_def Qsize have PN:"subgroup P (G\<lparr>carrier := N\<rparr>)" by (metis conjG.stabilizer_is_subgroup is_group subgroup.subgroup_of_subset)
       with cardP have "p ^ a dvd order (G\<lparr>carrier := N\<rparr>)" using groupN.card_subgrp_dvd by force
       hence "p ^ a dvd card N" unfolding order_def by simp
-      then obtain k where cardN:"card N = p ^ a * k" unfolding dvd_def by auto
-      moreover from NG order_G have "card N dvd (p ^ a * m)" using card_subgrp_dvd by auto
-      ultimately obtain l where "p ^ a * k * l = p ^ a * m" unfolding dvd_def by auto
-      hence "k * l = m" using mult_cancel2 nat_mult_assoc nat_mult_commute pa_not_zero by fastforce
+      with NG have smaller_sylow:"snd_sylow (G\<lparr>carrier := N\<rparr>) p a k" unfolding k_def by (rule restrict_locale)
       (*Instantiate the SndSylow Locale a second time for the normalizer of Q*)
-      with prime_p have ndvd:"\<not> (p dvd k)" by (metis dvd_mult2 pNotDvdm)
-      from cardN have orderN:"order (G\<lparr>carrier := N\<rparr>) = p ^ a * k" unfolding order_def by simp
       def NcalM \<equiv> "{s. s \<subseteq> carrier (G\<lparr>carrier := N\<rparr>) \<and> card s = p ^ a}"
       def NRelM \<equiv> "{(N1, N2). N1 \<in> NcalM \<and> N2 \<in> NcalM \<and> (\<exists>g\<in>carrier (G\<lparr>carrier := N\<rparr>). N1 = N2 #>\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> g)}"
-      interpret Nsylow: snd_sylow "G\<lparr>carrier := N\<rparr>" p a k NcalM NRelM
-        unfolding snd_sylow_def snd_sylow_axioms_def sylow_def sylow_axioms_def
-        using groupN.is_group prime_p orderN finite_groupN ndvd NcalM_def NRelM_def by fastforce+
+      interpret Nsylow: snd_sylow "G\<lparr>carrier := N\<rparr>" p a k NcalM NRelM using smaller_sylow NcalM_def NRelM_def.
       (*P and Q are conjugate in N*)
       from cardP PN have PsizeN:"P \<in> groupN.subgroups_of_size (p ^ a)" unfolding groupN.subgroups_of_size_def by auto
       from cardQ QN have QsizeN:"Q \<in> groupN.subgroups_of_size (p ^ a)" unfolding groupN.subgroups_of_size_def by auto
       from QsizeN PsizeN obtain g where g:"g \<in> carrier (G\<lparr>carrier := N\<rparr>)" "P = g <#\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> (Q #>\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> inv\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> g)" by (rule Nsylow.sylow_conjugate)
       with NG have "P = g <# (Q #> inv g)" unfolding r_coset_def l_coset_def by (auto simp:subgroup_inv_equality)
-      with g `N \<subseteq> carrier G` Qsize have "conjugation_action (p ^ a) g Q = P" unfolding conjugation_action_def by auto
+      with NG g Qsize have "conjugation_action (p ^ a) g Q = P" unfolding conjugation_action_def using subgroup_imp_subset by force
       with g NfixesQ show "Q = P" by auto
     qed
     moreover from finite_G PSize have "P \<in> conjP.fixed_points" using local.P_fixed_point_of_P_conj by auto
