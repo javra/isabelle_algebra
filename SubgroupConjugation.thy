@@ -333,4 +333,18 @@ proof -
   with P show "P \<in> conjP.fixed_points" unfolding conjP.fixed_points_def by auto
 qed
 
+lemma (in group)  conj_wo_inv:
+  assumes QG:"subgroup Q G"
+  assumes PG:"subgroup P G"
+  assumes g:"g \<in> carrier G"
+  assumes conj:"inv g <# (Q #> g) = P"
+  shows "Q #> g = g <# P"
+proof -
+  from g have invg:"inv g \<in> carrier G" by (metis inv_closed)
+  from conj have "g <# (inv g <# (Q #> g)) = g <# P" by simp
+  with QG g invg have "(g \<otimes> inv g) <# (Q #> g) = g <# P" by (metis lcos_m_assoc r_coset_subset_G subgroup_imp_subset)
+  with g invg have "\<one> <# (Q #> g) = g <# P" by (metis r_inv)
+  with QG g show "Q #> g = g <# P" by (metis lcos_mult_one r_coset_subset_G subgroup_imp_subset)
+qed   
+
 end

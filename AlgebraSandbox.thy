@@ -11,9 +11,8 @@ imports
   "~~/src/HOL/Algebra/Sylow"
   "~~/src/HOL/Algebra/Coset"
   "~~/src/HOL/Hilbert_Choice"
-  "~/Dokumente/uni/isabelle/SubgroupConjugation"
-  "~/Dokumente/uni/isabelle/GroupAction"
-begin                             
+  "SndSylow"
+begin
 
 (* I solved exercise 2a) (TODO) using the proof assistance system Isabelle. This is to raise
 awareness for the use of proof assistants and automatted theorem provers among mathematicians.
@@ -302,13 +301,6 @@ next
   ultimately show "inv x \<in> U" by simp
 qed
 
-lemma (in subgroup) subgroup_of_subset:
-  assumes G:"group G"
-  assumes PH:"H \<subseteq> K"
-  assumes KG:"subgroup K G"
-  shows "subgroup H (G\<lparr>carrier := K\<rparr>)"
-using assms subgroup_def group.subgroup_inv_equality m_inv_closed by fastforce
-
 locale simple_group = group +
   assumes "card H > 1"
   assumes "H \<lhd> G \<Longrightarrow> (H = carrier G \<or> card H = 1)"
@@ -333,16 +325,58 @@ lemma (in composition_series) is_composition_series: "composition_series G \<GG>
 definition symmetric_group :: "nat \<Rightarrow> _"
   where "symmetric_group n = BijGroup {1 .. n}"
 
-lemma (in group) trivial_subgroup_is_normal:
-  shows "{\<one>} \<lhd> G"
-unfolding normal_def normal_axioms_def r_coset_def l_coset_def by (auto intro: normalI subgroupI simp: is_group)
+lemma (in group)
+  assumes finite:"finite (carrier G)"
+  assumes orderG:"order G = q * p"
+  assumes primep:"prime p" and primeq:"prime q" and pq:"p < q"
+  shows "\<exists>!Q. Q \<in> (subgroups_of_size q)"
+proof -
+  from primep primeq pq have nqdvdp:"\<not> (q dvd p)" by (metis less_not_refl3 prime_def)
+  def calM \<equiv> "{s. s \<subseteq> carrier G \<and> card s = q ^ 1}"
+  def RelM \<equiv> "{(N1, N2). N1 \<in> calM \<and> N2 \<in> calM \<and> (\<exists>g\<in>carrier G. N1 = N2 #> g)}"
+  interpret syl: snd_sylow G q 1 p calM RelM
+    unfolding snd_sylow_def sylow_def snd_sylow_axioms_def sylow_axioms_def
+    using is_group primeq orderG finite nqdvdp calM_def RelM_def by auto
+  obtain Q where Q:"Q \<in> subgroups_of_size q" by (metis (lifting, mono_tags) mem_Collect_eq power_one_right subgroups_of_size_def syl.sylow_thm)
+  thus ?thesis 
+  proof (rule ex1I)
+     fix P
+     assume P:"P \<in> subgroups_of_size q"
+     have "card (subgroups_of_size q) mod q = 1" by (metis power_one_right syl.p_sylow_mod_p)     
+     moreover have "card (subgroups_of_size q) dvd p" by (metis power_one_right syl.num_sylow_dvd_remainder)
+     ultimately have "card (subgroups_of_size q) = 1" using pq primep by (metis Divides.mod_less prime_def)
+     with Q P show "P = Q" by (auto simp:card_Suc_eq)
+  qed
+qed
+
+lemma (in group) unique_sizes_subgrp_normal:
+  assumes fin:"finite (carrier G)"
+  assumes "\<exists>!Q. Q \<in> subgroups_of_size q"
+  shows "(THE Q. Q \<in> subgroups_of_size q) \<lhd> G"
+proof -
+  from assms obtain Q where "Q \<in> subgroups_of_size q" by auto
+  def Q \<equiv> "THE Q. Q \<in> subgroups_of_size q"
+  with assms have Qsize:"Q \<in> subgroups_of_size q" using theI by metis
+  hence QG:"subgroup Q G" and cardQ:"card Q = q" unfolding subgroups_of_size_def by auto
+  from QG have "Q \<lhd> G" apply(rule normalI)
+  proof
+    fix g
+    assume g:"g \<in> carrier G"
+    hence invg:"inv g \<in> carrier G" by (metis inv_closed)
+    with fin Qsize have "conjugation_action q (inv g) Q \<in> subgroups_of_size q" by (metis conjugation_is_size_invariant)
+    with g Qsize have "(inv g) <# (Q #> inv (inv g)) \<in> subgroups_of_size q" unfolding conjugation_action_def by auto
+    with invg g have "inv g <# (Q #> g) = Q" by (metis Qsize assms(2) inv_inv)
+    with QG QG g show "Q #> g = g <# Q" by (rule conj_wo_inv)
+  qed
+  with Q_def show ?thesis by simp
+qed
 
 lemma (in group)
   assumes finite:"finite (carrier G)"
   assumes orderG:"order G = q * p"
   assumes pqProps:"prime p" "prime q" "p < q"
   obtains Q where "card Q = q" "composition_series G [{\<one>}, Q, carrier G]"
-proof-
+proof -
   have "group G"..
   from assms have "order G = q ^ 1 * p" by simp
   with assms have "\<exists>H. subgroup H G \<and> card H = q ^ 1" by (metis sylow_thm is_group)

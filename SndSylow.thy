@@ -12,7 +12,6 @@ imports
   "CentralizerNormalizer"
 begin
 
-sledgehammer_params [provers = e spass remote_vampire remote_z3]
 lemma (in group) set_mult_inclusion:
   assumes H:"subgroup H G"
   assumes Q:"P \<subseteq> carrier G"
@@ -62,6 +61,16 @@ by (metis finite finite_subset subgroup subgroup_imp_subset)
 (*Second Sylow Theorems*)
 locale snd_sylow = sylow +
   assumes pNotDvdm:"\<not> (p dvd m)"
+
+theorem (in snd_sylow) sylow_greater_zero:
+  shows "card (subgroups_of_size (p ^ a)) > 0"
+proof -
+  obtain P where PG:"subgroup P G" and cardP:"card P = p ^ a" by (metis sylow_thm)
+  hence "P \<in> subgroups_of_size (p ^ a)" unfolding subgroups_of_size_def by auto
+  hence "subgroups_of_size (p ^ a) \<noteq> {}" by auto
+  moreover from finite_G have "finite (subgroups_of_size (p ^ a))" unfolding subgroups_of_size_def subgroup_def by auto
+  ultimately show ?thesis by auto
+qed
 
 lemma (in snd_sylow) is_snd_sylow: "snd_sylow G p a m" by (rule snd_sylow_axioms)
 
@@ -291,10 +300,9 @@ proof -
     ultimately have "conjP.fixed_points = {P}" by fastforce
     hence one:"card conjP.fixed_points = 1" by (auto simp: card_Suc_eq)
     with prime_p have "card conjP.fixed_points < p" unfolding prime_def by auto
-    with one have "card conjP.fixed_points mod p = card conjP.fixed_points" using mod_pos_pos_trivial by auto
-    with one show ?thesis by simp
+    with one show ?thesis using mod_pos_pos_trivial by auto
   qed
   finally show ?thesis.
 qed
 
-
+end
