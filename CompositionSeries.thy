@@ -3,8 +3,7 @@
 *)
 
 theory CompositionSeries
-imports
-  "~~/src/HOL/Algebra/Ideal"
+imports  "~~/src/HOL/Algebra/Ideal"
   "~~/src/HOL/Algebra/Group"
   "~~/src/HOL/Algebra/IntRing"
   "~~/src/HOL/Algebra/Bij"
@@ -46,10 +45,20 @@ next
   ultimately show "inv x \<in> U" by simp
 qed
 
+(* The trivial subgroup is, indeed, a subgroup *)
+lemma (in group) triv_subgroup:
+  shows "subgroup {\<one>} G"
+unfolding subgroup_def by auto
+
 (*The cardinality of the right cosets of the trivial subgroup is the cardinality of the group itself.*)
 lemma (in group) card_rcosets_triv:
+  assumes finite:"finite (carrier G)"
   shows "card (rcosets {\<one>}) = order G"
-sorry
+proof -
+  have "subgroup {\<one>} G" by (rule triv_subgroup)
+  with finite have "card (rcosets {\<one>}) * card {\<one>} = order G" by (rule lagrange)
+  thus ?thesis by (auto simp:card_Suc_eq)
+qed
 
 (*A subgroup which is unique in cardinality is normal*)
 lemma (in group) unique_sizes_subgrp_normal:
@@ -248,7 +257,7 @@ proof -
     assume i:"i = 0"
     from Hsize have orderH:"order (G\<lparr>carrier := H\<rparr>) = q" unfolding subgroups_of_size_def order_def by simp
     hence "order (G\<lparr>carrier := H\<rparr> Mod {\<one>}) = q" unfolding FactGroup_def using card_rcosets_triv order_def
-      by (metis (no_types) Hgroup.card_rcosets_triv monoid.cases_scheme monoid.select_convs(2) partial_object.select_convs(1) partial_object.update_convs(1))
+      by (metis Hgroup.card_rcosets_triv monoid.cases_scheme monoid.select_convs(2) partial_object.select_convs(1) partial_object.update_convs(1))
     have "normal {\<one>} (G\<lparr>carrier := H\<rparr>)" by (metis Hgroup.is_group Hgroup.normal_inv_iff HsubG group.trivial_subgroup_is_normal is_group singleton_iff subgroup.one_closed subgroup.subgroup_of_subgroup)
     hence "group (G\<lparr>carrier := H\<rparr> Mod {\<one>})" by (metis normal.factorgroup_is_group)
     with orderH primeq have "simple_group (G\<lparr>carrier := H\<rparr> Mod {\<one>})" by (metis `order (G\<lparr>carrier := H\<rparr> Mod {\<one>}) = q` group.prime_order_simple)
@@ -261,10 +270,8 @@ proof -
     from HsubG finite orderG have "card (rcosets H) * card H = q * p" unfolding subgroups_of_size_def using lagrange by simp
     with Hsize have "card (rcosets H) * q = q * p" unfolding subgroups_of_size_def by simp
     with `q \<noteq> 0` have "card (rcosets H) = p" by auto
-    find_theorems "simple_group"
-    with primep have "simple_group (G\<lparr>carrier := H\<rparr>)" using Hgroup.prime_order_simple sorry
-    have "card (rcosets H) = p" using prime_0 sorry
-    have "simple_group (G Mod H)" sorry
+    hence "order (G Mod H) = p" unfolding order_def FactGroup_def by auto
+    with groupGH primep have "simple_group (G Mod H)" by (metis group.prime_order_simple)
     with i show ?thesis by auto
   qed
 qed
