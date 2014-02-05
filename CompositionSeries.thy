@@ -1,15 +1,10 @@
-(*  Title:      CompositionSeries.thy
+(*  Title:      Composition Series
     Author:     Jakob von Raumer, Karlsruhe Institute of Technology
+    Maintainer: Jakob von Raumer <jakob.raumer@student.kit.edu>
 *)
 
 theory CompositionSeries
-imports  "~~/src/HOL/Algebra/Ideal"
-  "~~/src/HOL/Algebra/Group"
-  "~~/src/HOL/Algebra/IntRing"
-  "~~/src/HOL/Algebra/Bij"
-  "~~/src/HOL/Algebra/Sylow"
-  "~~/src/HOL/Algebra/Coset"
-  "~~/src/HOL/Hilbert_Choice"
+imports
   "SndSylow"
 begin
 
@@ -45,22 +40,24 @@ next
   ultimately show "inv x \<in> U" by simp
 qed
 
-(* The trivial subgroup is, indeed, a subgroup *)
+text{* The trivial subgroup is a subgroup: *}
+
 lemma (in group) triv_subgroup:
   shows "subgroup {\<one>} G"
 unfolding subgroup_def by auto
 
-(*The cardinality of the right cosets of the trivial subgroup is the cardinality of the group itself.*)
+text{*The cardinality of the right cosets of the trivial subgroup is the cardinality of the group itself: *}
 lemma (in group) card_rcosets_triv:
-  assumes finite:"finite (carrier G)"
+  assumes "finite (carrier G)"
   shows "card (rcosets {\<one>}) = order G"
 proof -
   have "subgroup {\<one>} G" by (rule triv_subgroup)
-  with finite have "card (rcosets {\<one>}) * card {\<one>} = order G" by (rule lagrange)
+  with assms have "card (rcosets {\<one>}) * card {\<one>} = order G" by (rule lagrange)
   thus ?thesis by (auto simp:card_Suc_eq)
 qed
 
-(*A subgroup which is unique in cardinality is normal*)
+text{* A subgroup which is unique in cardinality is normal: *}
+
 lemma (in group) unique_sizes_subgrp_normal:
   assumes fin:"finite (carrier G)"
   assumes "\<exists>!Q. Q \<in> subgroups_of_size q"
@@ -83,8 +80,9 @@ proof -
   with Q_def show ?thesis by simp
 qed
 
-(*A group whose order is the product of two distinct primes p and q where p < q 
-has a unique subgroup of size q*)
+text {* A group whose order is the product of two distinct
+primes $p$ and $q$ where $p < q$ has a unique subgroup of size $q$: *}
+
 lemma (in group) pq_order_unique_subgrp:
   assumes finite:"finite (carrier G)"
   assumes orderG:"order G = q * p"
@@ -109,7 +107,8 @@ proof -
   qed
 qed
 
-(*This unique subgroup is normal*)
+text {* This unique subgroup is normal *}
+
 corollary (in group) pq_order_subgrp_normal:
   assumes finite:"finite (carrier G)"
   assumes orderG:"order G = q * p"
@@ -117,12 +116,13 @@ corollary (in group) pq_order_subgrp_normal:
   shows "(THE Q. Q \<in> subgroups_of_size q) \<lhd> G"
 using assms by (metis pq_order_unique_subgrp unique_sizes_subgrp_normal)
 
-(*The trivial subgroup is normal in every group*)
+text {* The trivial subgroup is normal in every group *}
+
 lemma (in group) trivial_subgroup_is_normal:
   shows "{\<one>} \<lhd> G"
 unfolding normal_def normal_axioms_def r_coset_def l_coset_def by (auto intro: normalI subgroupI simp: is_group)
 
-section{*Simple Groups*}
+section {*Simple Groups*}
 
 locale simple_group = group +
   assumes "order G > 1"
@@ -130,7 +130,7 @@ locale simple_group = group +
 
 lemma (in simple_group) is_simple_group: "simple_group G" by (rule simple_group_axioms)
 
-(*Every group of prime order is simple*)
+text {* Every group of prime order is simple *}
 
 lemma (in group) prime_order_simple:
   assumes prime:"prime (order G)"
@@ -159,6 +159,11 @@ qed
 
 section{*Normal Series*}
 
+text {* We define a normal series as a locale which fixes one group
+@{term G} and a list @{term \<GG>} of subsets of @{term G}'s carrier. This list
+must begin with the trivial subgroup, end with the carrier of the group itself
+and each of the list items must be a normal subgroup of its successor. *}
+
 locale normal_series = group +
   fixes \<GG>
   assumes notempty:"\<GG> \<noteq> []"
@@ -168,12 +173,17 @@ locale normal_series = group +
 
 lemma (in normal_series) is_normal_series: "normal_series G \<GG>" by (rule normal_series_axioms)
 
-(*For every group there is a "trivial" normal series consisting only of the group
-itself and its trivial subgroup*)
+text {* For every group there is a "trivial" normal series consisting
+only of the group itself and its trivial subgroup *}
+
 lemma (in group) trivial_normal_series:
   shows "normal_series G [{\<one>}, carrier G]"
 unfolding normal_series_def normal_series_axioms_def
 using is_group trivial_subgroup_is_normal by auto
+
+text {* We can construct new normal series by expanding existing ones: If we
+append the carrier of a group @{term G} to a normal series for a normal subgroup
+@{term "H \<lhd> G"} we receive a normal series for @{term G}. *}
 
 lemma (in group) expand_normal_series:
   assumes normal:"normal_series (G\<lparr>carrier := H\<rparr>) \<HH>"
@@ -212,6 +222,9 @@ proof -
   qed
 qed
 
+text {* If a group's order is the product of two distinct primes @{term p} and @{term q}, where
+@{term "p < q"}, we can construct a normal series using the only subgroup of size  @{term q}. *}
+
 lemma (in group) pq_order_normal_series:
   assumes finite:"finite (carrier G)"
   assumes orderG:"order G = q * p"
@@ -225,15 +238,34 @@ proof -
   with HG show ?thesis unfolding H_def by (metis append_Cons append_Nil expand_normal_series)
 qed
 
-section{*Composition Series*}
+text {* The following defines the list of all quotient groups of the normal_series: *}
 
-(*A composition series is a normal series where all consecutie factor groups are simple*)
+definition (in normal_series) quotient_list
+  where "quotient_list = map (\<lambda>i. G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i) [0..<((length \<GG>) - 1)]"
+
+text {* The list of quotient groups has one less entry than the series itself: *}
+
+lemma (in normal_series) quotient_list_length:
+  shows "length quotient_list + 1 = length \<GG>"
+proof -
+  have "length quotient_list + 1 = length [0..<((length \<GG>) - 1)] + 1" unfolding quotient_list_def by simp
+  also have "... = (length \<GG> - 1) + 1" by (metis diff_zero length_upt)
+  also with notempty have "... = length \<GG>" by (metis add_eq_if comm_monoid_diff_class.diff_cancel length_0_conv nat_add_commute zero_neq_one)
+  finally show ?thesis .
+qed
+
+section {* Composition Series *}
+
+text {* A composition series is a normal series where all consecutie factor groups are simple: *}
+
 locale composition_series = normal_series +
   assumes "\<And>i. i + 1 <  length \<GG> \<Longrightarrow> simple_group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
 
 lemma (in composition_series) is_composition_series:
   shows "composition_series G \<GG>"
 by (rule composition_series_axioms)
+
+text {* The normal series for groups of order @{term "p * q"} is even a composition series: *}
 
 lemma (in group) pq_order_composition_series:
   assumes finite:"finite (carrier G)"
@@ -257,7 +289,7 @@ proof -
     assume i:"i = 0"
     from Hsize have orderH:"order (G\<lparr>carrier := H\<rparr>) = q" unfolding subgroups_of_size_def order_def by simp
     hence "order (G\<lparr>carrier := H\<rparr> Mod {\<one>}) = q" unfolding FactGroup_def using card_rcosets_triv order_def
-      by (metis Hgroup.card_rcosets_triv monoid.cases_scheme monoid.select_convs(2) partial_object.select_convs(1) partial_object.update_convs(1))
+      by (metis Hgroup.card_rcosets_triv HsubG finite monoid.cases_scheme monoid.select_convs(2) partial_object.select_convs(1) partial_object.update_convs(1) subgroup_finite)
     have "normal {\<one>} (G\<lparr>carrier := H\<rparr>)" by (metis Hgroup.is_group Hgroup.normal_inv_iff HsubG group.trivial_subgroup_is_normal is_group singleton_iff subgroup.one_closed subgroup.subgroup_of_subgroup)
     hence "group (G\<lparr>carrier := H\<rparr> Mod {\<one>})" by (metis normal.factorgroup_is_group)
     with orderH primeq have "simple_group (G\<lparr>carrier := H\<rparr> Mod {\<one>})" by (metis `order (G\<lparr>carrier := H\<rparr> Mod {\<one>}) = q` group.prime_order_simple)

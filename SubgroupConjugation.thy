@@ -1,18 +1,24 @@
-(*  Title:      SubgroupConjugation.thy
+(*  Title:      Subgroup Conjugation
     Author:     Jakob von Raumer, Karlsruhe Institute of Technology
+    Maintainer: Jakob von Raumer <jakob.raumer at student.kit.edu>
 *)
 
 theory SubgroupConjugation
 imports
-  "~~/src/HOL/Algebra/Ideal"
-  "~~/src/HOL/Algebra/Group"
-  "~~/src/HOL/Algebra/IntRing"
-  "~~/src/HOL/Algebra/Bij"
-  "~~/src/HOL/Algebra/Sylow"
-  "~~/src/HOL/Algebra/Coset"
-  "~~/src/HOL/Hilbert_Choice"
   "GroupAction"
 begin
+
+section {* Conjugation of Subgroups and Cosets *}
+
+text {* This theory examines properties of the conjugation of subgroups
+of a fixed group as a group action *}
+
+subsection {* Definitions and Preliminaries *}
+
+text {* We define the set of all subgroups of @{term G} which have a certain
+cardinality. @{term G} will act on those sets. Afterwards some theorems which
+are already available for right cosets are dualized into statements about
+left cosets.*}
 
 lemma (in subgroup) subgroup_of_subset:
   assumes G:"group G"
@@ -21,11 +27,16 @@ lemma (in subgroup) subgroup_of_subset:
   shows "subgroup H (G\<lparr>carrier := K\<rparr>)"
 using assms subgroup_def group.subgroup_inv_equality m_inv_closed by fastforce
 
-lemma (in group) lcosI:
-     "[| h \<in> H; H \<subseteq> carrier G; x \<in> carrier G|] ==> x \<otimes> h \<in> x <# H"
-by (auto simp add: l_coset_def)
+context group
+begin
 
-lemma (in group) lcoset_join2:
+definition subgroups_of_size ::"nat \<Rightarrow> _"
+  where "subgroups_of_size p = {H. subgroup H G \<and> card H = p}"
+
+lemma lcosI: "[| h \<in> H; H \<subseteq> carrier G; x \<in> carrier G|] ==> x \<otimes> h \<in> x <# H"
+  by (auto simp add: l_coset_def)
+
+lemma lcoset_join2:
   assumes H:"subgroup H G"
   assumes g:"g \<in> H"
   shows "g <# H = H"
@@ -41,7 +52,55 @@ next
   with x g H show "x \<in> g <# H" by (metis is_group subgroup.lcos_module_rev subgroup.mem_carrier)
 qed
 
-lemma (in group) conjugation_subgroup:
+lemma cardeq_rcoset:
+  assumes "finite (carrier G)"
+  assumes "M \<subseteq> carrier G"
+  assumes "g \<in> carrier G"
+  shows "card (M #> g) = card  M"
+proof -
+  have "M #> g \<in> rcosets M" by (metis assms(2) assms(3) rcosetsI)
+  thus "card (M #> g) = card M" by (metis assms(1) assms(2) card_cosets_equal)
+qed
+
+lemma cardeq_lcoset:
+  assumes "finite (carrier G)"
+  assumes M:"M \<subseteq> carrier G"
+  assumes g:"g \<in> carrier G"
+  shows "card (g <# M) = card  M"
+proof -
+  have "bij_betw (\<lambda>m. g \<otimes> m) M (g <# M)"
+  proof(auto simp add: bij_betw_def)
+    show "inj_on (op \<otimes> g) M"
+    proof(rule inj_onI)
+        from g have invg:"inv g \<in> carrier G" by (rule inv_closed)
+        fix x y
+        assume x:"x \<in> M" and y:"y \<in> M"
+        with M have xG:"x \<in> carrier G" and yG:"y \<in> carrier G" by auto 
+        assume "g \<otimes> x = g \<otimes> y"
+        hence "(inv g) \<otimes> (g \<otimes> x) = (inv g) \<otimes> (g \<otimes> y)" by simp
+        with g invg xG yG have "(inv g \<otimes> g) \<otimes> x = (inv g \<otimes> g) \<otimes> y" by (metis m_assoc)
+        with g invg xG yG show  "x = y" by simp
+    qed
+  next
+    fix x
+    assume "x \<in> M"
+    thus "g \<otimes> x \<in> g <# M" unfolding l_coset_def by auto
+  next
+    fix x
+    assume x:"x \<in> g <# M"
+    then obtain m where "x = g \<otimes> m" "m \<in> M" unfolding l_coset_def by auto
+    thus "x \<in> op \<otimes> g ` M" by simp
+  qed
+  thus "card (g <# M) = card M" by (metis bij_betw_same_card)
+qed
+
+subsection {* Conjugation is a group action *}
+
+text {* We will now prove that conjugation acts on the subgroups
+of a certain group. A large part of this proof consists of showing that
+the conjugation of a subgroup with a group element is, again, a subgroup. *}
+
+lemma conjugation_subgroup:
   assumes HG:"subgroup H G"
   assumes gG:"g \<in> carrier G"
   shows "subgroup (g <# (H #> inv g)) G"
@@ -93,61 +152,10 @@ next
   with invx show "inv x \<in> g <# (H #> inv g)" by simp
 qed
 
-lemma (in group) rcos_m_assoc:
-     "[| M \<subseteq> carrier G; g \<in> carrier G; h \<in> carrier G |]
-      ==> (M #> g) #> h = M #> (g \<otimes> h)"
-by (force simp add: r_coset_def m_assoc)
-
-lemma (in group) rcos_mult_one: "M \<subseteq> carrier G ==> M #> \<one> = M"
-by (force simp add: r_coset_def)
-
-lemma (in group) cardeq_rcoset:
-  assumes "finite (carrier G)"
-  assumes "M \<subseteq> carrier G"
-  assumes "g \<in> carrier G"
-  shows "card (M #> g) = card  M"
-proof -
-  have "M #> g \<in> rcosets M" by (metis assms(2) assms(3) rcosetsI)
-  thus "card (M #> g) = card M" by (metis assms(1) assms(2) card_cosets_equal)
-qed
-
-
-lemma (in group) cardeq_lcoset:
-  assumes "finite (carrier G)"
-  assumes M:"M \<subseteq> carrier G"
-  assumes g:"g \<in> carrier G"
-  shows "card (g <# M) = card  M"
-proof -
-  have "bij_betw (\<lambda>m. g \<otimes> m) M (g <# M)"
-  proof(auto simp add: bij_betw_def)
-    show "inj_on (op \<otimes> g) M"
-    proof(rule inj_onI)
-        from g have invg:"inv g \<in> carrier G" by (rule inv_closed)
-        fix x y
-        assume x:"x \<in> M" and y:"y \<in> M"
-        with M have xG:"x \<in> carrier G" and yG:"y \<in> carrier G" by auto 
-        assume "g \<otimes> x = g \<otimes> y"
-        hence "(inv g) \<otimes> (g \<otimes> x) = (inv g) \<otimes> (g \<otimes> y)" by simp
-        with g invg xG yG have "(inv g \<otimes> g) \<otimes> x = (inv g \<otimes> g) \<otimes> y" by (metis m_assoc)
-        with g invg xG yG show  "x = y" by simp
-    qed
-  next
-    fix x
-    assume "x \<in> M"
-    thus "g \<otimes> x \<in> g <# M" unfolding l_coset_def by auto
-  next
-    fix x
-    assume x:"x \<in> g <# M"
-    then obtain m where "x = g \<otimes> m" "m \<in> M" unfolding l_coset_def by auto
-    thus "x \<in> op \<otimes> g ` M" by simp
-  qed
-  thus "card (g <# M) = card M" by (metis bij_betw_same_card)
-qed
-
-definition (in group) conjugation_action::"nat \<Rightarrow> _"
+definition conjugation_action::"nat \<Rightarrow> _"
   where "conjugation_action p = (\<lambda>g\<in>carrier G. \<lambda>P\<in>subgroups_of_size p. g <# (P #> inv g))"
 
-lemma (in group) conjugation_is_size_invariant:
+lemma conjugation_is_size_invariant:
   assumes fin:"finite (carrier G)"
   assumes P:"P \<in> subgroups_of_size p"
   assumes g:"g \<in> carrier G"
@@ -167,15 +175,14 @@ proof -
   with P g show ?thesis unfolding conjugation_action_def by simp
 qed
 
-lemma (in group) conjugation_is_Bij:
+lemma conjugation_is_Bij:
   assumes fin:"finite (carrier G)"
   assumes g:"g \<in> carrier G"
   shows "conjugation_action p g \<in> Bij (subgroups_of_size p)"
 proof -
   from g have invg:"inv g \<in> carrier G" by (rule inv_closed)
   from g have "conjugation_action p g \<in> extensional (subgroups_of_size p)" unfolding conjugation_action_def by simp
-  moreover 
-  have "bij_betw (conjugation_action p g) (subgroups_of_size p) (subgroups_of_size p)"
+  moreover have "bij_betw (conjugation_action p g) (subgroups_of_size p) (subgroups_of_size p)"
   proof(auto simp add:bij_betw_def)
     show "inj_on (conjugation_action p g) (subgroups_of_size p)"
     proof(rule inj_onI)
@@ -190,9 +197,9 @@ proof -
       hence "\<one> <# (U #> inv g) = \<one> <# (V #> inv g)" by (metis g l_inv)
       hence "U #> inv g = V #> inv g" by (metis subsetL lcos_mult_one)
       hence "(U #> inv g) #> g = (V #> inv g) #> g" by simp
-      hence "U #> (inv g \<otimes> g) = V #> (inv g \<otimes> g)" by (metis g invg rcos_m_assoc subsetG) 
+      hence "U #> (inv g \<otimes> g) = V #> (inv g \<otimes> g)" by (metis coset_mult_assoc g inv_closed subsetG)
       hence "U #> \<one> = V #> \<one>" by (metis g l_inv)
-      thus "U = V" by (metis subsetG rcos_mult_one)
+      thus "U = V" by (metis coset_mult_one subsetG)
     qed
   next
     fix P
@@ -223,7 +230,7 @@ proof -
   ultimately show ?thesis unfolding BijGroup_def Bij_def by simp
 qed
 
-lemma (in group) lr_coset_assoc:
+lemma lr_coset_assoc:
   assumes g:"g \<in> carrier G"
   assumes h:"h \<in> carrier G"
   assumes P:"P \<subseteq> carrier G"
@@ -244,7 +251,7 @@ next
   with `p \<in> P` show "x \<in> g <# (P #> h)" unfolding l_coset_def r_coset_def by auto
 qed
 
-lemma (in group) acts_on_subsets:
+theorem acts_on_subsets:
   assumes fin:"finite (carrier G)"
   shows "group_action G (conjugation_action p) (subgroups_of_size p)"
 unfolding group_action_def group_action_axioms_def group_hom_def group_hom_axioms_def hom_def
@@ -273,12 +280,12 @@ next
     assume P:"P \<in> subgroups_of_size p"
     hence PG:"P \<subseteq> carrier G" unfolding subgroups_of_size_def by (auto simp:subgroup_imp_subset)
     with y have yPG:"y <# P \<subseteq> carrier G" by (metis l_coset_subset_G)
-    from x y have invxyG:"inv (x \<otimes> y) \<in> carrier G" and xyG:"x \<otimes> y \<in> carrier G" by (metis inv_closed m_closed)+
+    from x y have invxyG:"inv (x \<otimes> y) \<in> carrier G" and xyG:"x \<otimes> y \<in> carrier G" using inv_closed m_closed by auto
     from yBij have "conjy ` subgroups_of_size p = subgroups_of_size p" unfolding Bij_def bij_betw_def by simp
     with P have conjyP:"conjy P \<in> subgroups_of_size p" unfolding Bij_def bij_betw_def by (metis (full_types) imageI) 
     with x y P have "conjx (conjy P) = x <# ((y <# (P #> inv y)) #> inv x)" unfolding conjy_def conjx_def conjugation_action_def by simp
     also from y invy PG have "... = x <# (((y <# P) #> inv y) #> inv x)" by (metis lr_coset_assoc)
-    also from PG invx invy y have "... = x <# ((y <# P) #> (inv y \<otimes> inv x))" by (metis l_coset_subset_G rcos_m_assoc)
+    also from PG invx invy y have "... = x <# ((y <# P) #> (inv y \<otimes> inv x))" by (metis coset_mult_assoc yPG)
     also from x y have "... = x <# ((y <# P) #> inv (x \<otimes> y))" by (metis inv_mult_group)
     also from invxyG x yPG have "... = (x <# (y <# P)) #> inv (x \<otimes> y)" by (metis lr_coset_assoc)
     also from x y PG have "... = ((x \<otimes> y) <# P) #> inv (x \<otimes> y)" by (metis lcos_m_assoc)
@@ -291,7 +298,9 @@ next
     unfolding conjx_def conjy_def conjugation_action_def by simp
 qed
 
-lemma (in group) stabilizer_contains_P:
+subsection {* Properties of the Conjugation Action *}
+
+lemma stabilizer_contains_P:
   assumes fin:"finite (carrier G)"
   assumes P:"P \<in> subgroups_of_size p"
   shows "P \<subseteq> group_action.stabilizer G (conjugation_action p) P"
@@ -304,12 +313,12 @@ proof
   from x P have xG:"x \<in> carrier G" unfolding subgroups_of_size_def subgroup_def by auto
   with P have "conjugation_action p x P = x <# (P #> inv x)" unfolding conjugation_action_def by simp
   also from `inv x \<in> P` PG have "... = x <# P" by (metis coset_join2 subgroup.mem_carrier)
-  also from x PG have "... = P" by (metis lcoset_join2 subgroup.mem_carrier)
+  also from PG x have "... = P" by (rule lcoset_join2)
   finally have "conjugation_action p x P = P".
   with xG show "x \<in> group_action.stabilizer G (conjugation_action p) P" unfolding conj.stabilizer_def by simp
 qed
 
-corollary (in group) stabilizer_supergrp_P:
+corollary stabilizer_supergrp_P:
   assumes fin:"finite (carrier G)"
   assumes P:"P \<in> subgroups_of_size p"
   shows "subgroup P (G\<lparr>carrier := group_action.stabilizer G (conjugation_action p) P\<rparr>)"
@@ -333,7 +342,7 @@ proof -
   with P show "P \<in> conjP.fixed_points" unfolding conjP.fixed_points_def by auto
 qed
 
-lemma (in group)  conj_wo_inv:
+lemma conj_wo_inv:
   assumes QG:"subgroup Q G"
   assumes PG:"subgroup P G"
   assumes g:"g \<in> carrier G"
@@ -345,6 +354,8 @@ proof -
   with QG g invg have "(g \<otimes> inv g) <# (Q #> g) = g <# P" by (metis lcos_m_assoc r_coset_subset_G subgroup_imp_subset)
   with g invg have "\<one> <# (Q #> g) = g <# P" by (metis r_inv)
   with QG g show "Q #> g = g <# P" by (metis lcos_mult_one r_coset_subset_G subgroup_imp_subset)
-qed   
+qed
+
+end
 
 end

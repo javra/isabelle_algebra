@@ -1,43 +1,16 @@
-(*  Title:      SndSylow.thy
+(*  Title:      Secondary Sylow Theorems
     Author:     Jakob von Raumer, Karlsruhe Institute of Technology
+    Maintainer: Jakob von Raumer <jakob.raumer at student.kit.edu>
 *)
 
 theory SndSylow
 imports
-  "~~/src/HOL/Algebra/Group"
-  "~~/src/HOL/Algebra/Sylow"
-  "~~/src/HOL/Algebra/Coset"
   "SubgroupConjugation"
-  "GroupAction"
-  "CentralizerNormalizer"
 begin
 
-lemma (in group) set_mult_inclusion:
-  assumes H:"subgroup H G"
-  assumes Q:"P \<subseteq> carrier G"
-  assumes PQ:"H <#> P \<subseteq> H"
-  shows "P \<subseteq> H"
-proof
-  fix x
-  from H have "\<one> \<in> H" by (rule subgroup.one_closed)
-  moreover assume x:"x \<in> P"
-  ultimately have "\<one> \<otimes> x \<in> H <#> P" unfolding set_mult_def by auto
-  with PQ have "\<one> \<otimes> x \<in> H" by auto
-  with H Q x show  "x \<in> H" by (metis in_mono l_one)
-qed
+section {* The Secondary Sylow Theorems *}
 
-lemma (in group) card_subgrp_dvd:
-  assumes "subgroup H G"
-  shows "card H dvd order G"
-proof(cases "finite (carrier G)")
-  case True
-  with assms have "card (rcosets H) * card H = order G" by (metis lagrange)
-  thus ?thesis by (metis dvd_triv_left nat_mult_commute)
-next
-  case False
-  hence "order G = 0" unfolding order_def by (metis card_infinite)
-  thus ?thesis by (metis dvd_0_right)
-qed
+subsection {* Preliminaries *}
 
 lemma card_eq_subset_imp_eq:
   assumes "A \<subseteq> B"
@@ -52,17 +25,62 @@ lemma singletonI:
   shows "A = {y}"
 using assms by fastforce
 
-lemma (in group) subgroup_finite:
+context group
+begin
+
+lemma set_mult_inclusion:
+  assumes H:"subgroup H G"
+  assumes Q:"P \<subseteq> carrier G"
+  assumes PQ:"H <#> P \<subseteq> H"
+  shows "P \<subseteq> H"
+proof
+  fix x
+  from H have "\<one> \<in> H" by (rule subgroup.one_closed)
+  moreover assume x:"x \<in> P"
+  ultimately have "\<one> \<otimes> x \<in> H <#> P" unfolding set_mult_def by auto
+  with PQ have "\<one> \<otimes> x \<in> H" by auto
+  with H Q x show  "x \<in> H" by (metis in_mono l_one)
+qed
+
+lemma card_subgrp_dvd:
+  assumes "subgroup H G"
+  shows "card H dvd order G"
+proof(cases "finite (carrier G)")
+  case True
+  with assms have "card (rcosets H) * card H = order G" by (metis lagrange)
+  thus ?thesis by (metis dvd_triv_left nat_mult_commute)
+next
+  case False
+  hence "order G = 0" unfolding order_def by (metis card_infinite)
+  thus ?thesis by (metis dvd_0_right)
+qed
+
+lemma subgroup_finite:
   assumes subgroup:"subgroup H G"
   assumes finite:"finite (carrier G)"
   shows "finite H"
 by (metis finite finite_subset subgroup subgroup_imp_subset)
 
-(*Second Sylow Theorems*)
+end
+
+subsection {* Extending the Sylow Locale *}
+
+text {* This locale extends the originale @{term sylow} locale by adding
+the constraint that the @{term p} must not divide the remainder @{term m},
+i.e. @{term "p ^ a"} is the maximal size of a @{term p}-subgroup of
+@{term G}. *}
+
 locale snd_sylow = sylow +
   assumes pNotDvdm:"\<not> (p dvd m)"
 
-theorem (in snd_sylow) sylow_greater_zero:
+context snd_sylow
+begin
+
+lemma pa_not_zero:
+  shows "p ^ a \<noteq> 0"
+by (metis less_numeral_extra(3) prime_p zero_less_prime_power)
+
+lemma sylow_greater_zero:
   shows "card (subgroups_of_size (p ^ a)) > 0"
 proof -
   obtain P where PG:"subgroup P G" and cardP:"card P = p ^ a" by (metis sylow_thm)
@@ -72,9 +90,11 @@ proof -
   ultimately show ?thesis by auto
 qed
 
-lemma (in snd_sylow) is_snd_sylow: "snd_sylow G p a m" by (rule snd_sylow_axioms)
+lemma is_snd_sylow: "snd_sylow G p a m" by (rule snd_sylow_axioms)
 
-lemma (in snd_sylow) ex_conj_sylow_group:
+subsection {* Every $p$-group is Contained in a conjugate of a $p$-Sylow-Group *}
+
+lemma ex_conj_sylow_group:
   assumes H:"H \<in> subgroups_of_size (p ^ b)"
   assumes Psize:"P \<in> subgroups_of_size (p ^ a)"
   obtains g where "g \<in> carrier G" "H \<subseteq> g <# (P #> inv g)"
@@ -112,19 +132,19 @@ proof -
     with HG h show  "n \<otimes> h \<in> N" by (metis in_mono inv_inv)
   qed
   with g have "((P #> g) <#> H) #> inv g \<subseteq> (P #> g) #> inv g" unfolding r_coset_def by auto
-  with PG g invg have "((P #> g) <#> H) #> inv g \<subseteq> P" by (metis coset_mult_inv2 rcos_m_assoc subgroup_imp_subset)
+  with PG g invg have "((P #> g) <#> H) #> inv g \<subseteq> P" by (metis coset_mult_assoc coset_mult_one r_inv subgroup_imp_subset)
   with g HG PG invg have "P <#> (g <# H #> inv g) \<subseteq> P" by (metis lr_coset_assoc r_coset_subset_G rcos_assoc_lcos setmult_rcos_assoc subgroup_imp_subset)
   with PG HG g invg have "g <# H #> inv g \<subseteq> P" by (metis l_coset_subset_G r_coset_subset_G set_mult_inclusion)
   with g have "(g <# H #> inv g) #> inv (inv g) \<subseteq> P #> inv (inv g)" unfolding r_coset_def by auto
-  with HG g invg invinvg have "g <# H \<subseteq> P #> inv (inv g)" by (metis coset_mult_inv2 l_coset_subset_G rcos_m_assoc)
+  with HG g invg invinvg have "g <# H \<subseteq> P #> inv (inv g)" by (metis coset_mult_assoc coset_mult_inv2 l_coset_subset_G)
   with g have "(inv g) <# (g <# H) \<subseteq> inv g <# (P #> inv (inv g))" unfolding l_coset_def by auto
   with HG g invg invinvg have "H \<subseteq> inv g <# (P #> inv (inv g))" by (metis inv_inv lcos_m_assoc lcos_mult_one r_inv)
   with invg show thesis by (auto dest:that)
 qed
 
-section{*Every $p$-Group is Contained in a $p$-Sylow-Group*}
+subsection{*Every $p$-Group is Contained in a $p$-Sylow-Group*}
 
-theorem (in snd_sylow) sylow_contained_in_sylow_group:
+theorem sylow_contained_in_sylow_group:
   assumes H:"H \<in> subgroups_of_size (p ^ b)"
   obtains S where "H \<subseteq> S" and "S \<in> subgroups_of_size (p ^ a)"
 proof -
@@ -137,9 +157,9 @@ proof -
   ultimately show thesis unfolding conjugation_action_def by (auto dest:that)
 qed
 
-section{*$p$-Sylow-Groups are conjugates of each other*}
+subsection{*$p$-Sylow-Groups are conjugates of each other*}
 
-theorem (in snd_sylow) sylow_conjugate:
+theorem sylow_conjugate:
   assumes P:"P \<in> subgroups_of_size (p ^ a)"
   assumes Q:"Q \<in> subgroups_of_size (p ^ a)"
   obtains g where "g \<in> carrier G" "Q = g <# (P #> inv g)"
@@ -156,7 +176,7 @@ proof -
   with g show thesis by (metis that)
 qed
 
-corollary (in snd_sylow) sylow_conj_orbit_rel:
+corollary sylow_conj_orbit_rel:
   assumes P:"P \<in> subgroups_of_size (p ^ a)"
   assumes Q:"Q \<in> subgroups_of_size (p ^ a)"
   shows "(P,Q) \<in> group_action.same_orbit_rel G (conjugation_action (p ^ a)) (subgroups_of_size (p ^ a))"
@@ -169,10 +189,11 @@ proof -
   with g g' P Q show ?thesis by auto
 qed
 
-section{*Counting Sylow-Groups*}
+subsection{*Counting Sylow-Groups*}
 
-(*The number of sylow groups is the orbit size of one of them*)
-theorem (in snd_sylow) num_eq_card_orbit:
+text {*The number of sylow groups is the orbit size of one of them: *}
+
+theorem num_eq_card_orbit:
   assumes P:"P \<in> subgroups_of_size (p ^ a)"
   shows "subgroups_of_size (p ^ a) = group_action.orbit G (conjugation_action (p ^ a)) (subgroups_of_size (p ^ a)) P"
 proof(auto)
@@ -191,11 +212,7 @@ proof(auto)
   }
 qed
 
-theorem (in snd_sylow) pa_not_zero:
-  shows "p ^ a \<noteq> 0"
-by (metis less_numeral_extra(3) prime_p zero_less_prime_power)
-
-theorem (in snd_sylow) num_sylow_normalizer:
+theorem num_sylow_normalizer:
   assumes Psize:"P \<in> subgroups_of_size (p ^ a)"
   shows "card (rcosets\<^bsub>G\<lparr>carrier := group_action.stabilizer G (conjugation_action (p ^ a)) P\<rparr>\<^esub> P) * p ^ a = card (group_action.stabilizer G (conjugation_action (p ^ a)) P)"
 proof -
@@ -226,7 +243,9 @@ proof -
   thus ?thesis unfolding dvd_def by simp
 qed
 
-(*We can restrict this locale to refer to a subgroup of order at least (p ^ a)*)
+text {*We can restrict this locale to refer to a subgroup of order at
+least @{term "(p ^ a)"}: *}
+
 lemma (in snd_sylow) restrict_locale:
   assumes subgrp:"subgroup P G"
   assumes card:"p ^ a dvd card P"
@@ -269,14 +288,14 @@ proof -
       assume Qfixed:"Q \<in> conjP.fixed_points"
       hence Qsize:"Q \<in> subgroups_of_size (p ^ a)" unfolding conjP.fixed_points_def by simp
       hence cardQ:"card Q = p ^ a" unfolding subgroups_of_size_def by simp
-      (*The normalizer of Q in G*)
-      (*Let's first show some basic propertiers of N*)
+      -- "The normalizer of @{term Q} in @{term G}"
+      -- "Let's first show some basic propertiers of @{text N}"
       def N \<equiv> "conjG.stabilizer Q"
       def k \<equiv> "(card N) div (p ^ a)"
       from N_def Qsize have NG:"subgroup N G" by (metis conjG.stabilizer_is_subgroup)
       then interpret groupN: group "G\<lparr>carrier := N\<rparr>" by (metis subgroup_imp_group)
       from Qsize N_def have QN:"subgroup Q (G\<lparr>carrier := N\<rparr>)" using stabilizer_supergrp_P by auto
-      (*The following proposition is used to show that P = Q later*)
+      -- "The following proposition is used to show that $P = Q$ later"
       from Qsize have NfixesQ:"\<forall>g\<in>N. conjugation_action (p ^ a) g Q = Q" unfolding N_def conjG.stabilizer_def by auto
       from Qfixed have PfixesQ:"\<forall>g\<in>P. conjugation_action (p ^ a) g Q = Q" unfolding conjP.fixed_points_def conjP.stabilizer_def by auto
       with PsubG have  "P \<subseteq> N" unfolding N_def conjG.stabilizer_def by auto
@@ -284,11 +303,11 @@ proof -
       with cardP have "p ^ a dvd order (G\<lparr>carrier := N\<rparr>)" using groupN.card_subgrp_dvd by force
       hence "p ^ a dvd card N" unfolding order_def by simp
       with NG have smaller_sylow:"snd_sylow (G\<lparr>carrier := N\<rparr>) p a k" unfolding k_def by (rule restrict_locale)
-      (*Instantiate the SndSylow Locale a second time for the normalizer of Q*)
+      -- "Instantiate the @{term snd_sylow} Locale a second time for the normalizer of @{term Q}"
       def NcalM \<equiv> "{s. s \<subseteq> carrier (G\<lparr>carrier := N\<rparr>) \<and> card s = p ^ a}"
       def NRelM \<equiv> "{(N1, N2). N1 \<in> NcalM \<and> N2 \<in> NcalM \<and> (\<exists>g\<in>carrier (G\<lparr>carrier := N\<rparr>). N1 = N2 #>\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> g)}"
       interpret Nsylow: snd_sylow "G\<lparr>carrier := N\<rparr>" p a k NcalM NRelM using smaller_sylow NcalM_def NRelM_def.
-      (*P and Q are conjugate in N*)
+      -- "@{term P} and @{term Q} are conjugate in @{term N}:"
       from cardP PN have PsizeN:"P \<in> groupN.subgroups_of_size (p ^ a)" unfolding groupN.subgroups_of_size_def by auto
       from cardQ QN have QsizeN:"Q \<in> groupN.subgroups_of_size (p ^ a)" unfolding groupN.subgroups_of_size_def by auto
       from QsizeN PsizeN obtain g where g:"g \<in> carrier (G\<lparr>carrier := N\<rparr>)" "P = g <#\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> (Q #>\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> inv\<^bsub>G\<lparr>carrier := N\<rparr>\<^esub> g)" by (rule Nsylow.sylow_conjugate)
@@ -304,5 +323,7 @@ proof -
   qed
   finally show ?thesis.
 qed
+
+end
 
 end

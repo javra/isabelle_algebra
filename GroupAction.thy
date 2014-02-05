@@ -1,19 +1,56 @@
-(*  Title:      GroupAction.thy
+(*  Title:      Group Actions
     Author:     Jakob von Raumer, Karlsruhe Institute of Technology
+    Maintainer: Jakob von Raumer <jakob.raumer at student.kit.edu>
 *)
 
 theory GroupAction
 imports
-  "~~/src/HOL/Algebra/Ideal"
-  "~~/src/HOL/Algebra/Group"
-  "~~/src/HOL/Algebra/IntRing"
   "~~/src/HOL/Algebra/Bij"
   "~~/src/HOL/Algebra/Sylow"
   "~~/src/HOL/Algebra/Coset"
-  "~~/src/HOL/Hilbert_Choice"
 begin
 
-(*Intersecting Cosets are equal*)
+section {* Group Actions *}
+
+text {* This is an implemention of group actions based on the group
+implementation of HOL-Algebra. An action a group $G$ on a set $M$ is
+represented by a group homomorphism between $G$ and the group of bijections
+on $M$ *}
+
+subsection {* Preliminaries and Definition*}
+
+text {* First, we need two theorems about singletons and sets of singletons
+which unfortunately are not included in the library. *}
+
+theorem singleton_intersection:
+  assumes A:"card A = 1"
+  assumes B:"card B = 1"
+  assumes noteq:"A \<noteq> B"
+  shows "A \<inter> B = {}"
+using assms by(auto simp:card_Suc_eq)
+
+theorem card_singleton_set:
+  assumes finA:"finite A"
+  assumes cardOne:"\<forall>x \<in> A.(card x = 1)"
+  shows "card (\<Union>A) = card A"
+proof -
+  from finA have "card (\<Union>A) = (\<Sum>x\<in>A. card x)"
+  proof(rule card_Union_disjoint)
+    from cardOne show "\<forall>A\<in>A. finite A" by (auto intro: card_ge_0_finite)
+  next
+    show "\<forall>x\<in>A. \<forall>y\<in>A. x \<noteq> y \<longrightarrow> x \<inter> y = {}"
+    proof(clarify)
+      fix x y
+      assume x:"x \<in> A" and y:"y \<in> A" and "x \<noteq> y"
+      with cardOne have "card x = 1" "card y = 1" by auto
+      with `x \<noteq> y` show "x \<inter> y = {}" by (metis singleton_intersection)
+    qed
+  qed
+  also from cardOne have "... = card A" by simp
+  finally show ?thesis.
+qed
+
+text {* Intersecting Cosets are equal: *}
 
 lemma (in subgroup) repr_independence2:
   assumes group:"group G"
@@ -35,6 +72,8 @@ begin
 
 lemma is_group_action:"group_action G \<phi> M"..
 
+text {* The action of @{term "\<one>\<^bsub>G\<^esub>"} has no effect: *}
+
 lemma one_is_id:
   assumes "m \<in> M"
   shows "(\<phi> \<one>) m = m"
@@ -49,18 +88,14 @@ lemma action_closed:
   assumes m:"m \<in> M"
   assumes g:"g \<in> carrier G"
   shows "\<phi> g m \<in> M"
-proof -
-  from grouphom g have "\<phi> g \<in> Bij M" unfolding BijGroup_def by (auto dest: group_hom.hom_closed)
-  with m show ?thesis unfolding Bij_def bij_betw_def by auto
-qed
+using assms grouphom group_hom.hom_closed unfolding BijGroup_def Bij_def bij_betw_def by fastforce
 
 lemma img_in_bij:
   assumes "g \<in> carrier G"
   shows "(\<phi> g) \<in> Bij M"
-proof -
-  from assms grouphom have "(\<phi> g) \<in> carrier (BijGroup M)" by (metis group_hom.hom_closed)
-  thus "(\<phi> g) \<in> Bij M" unfolding BijGroup_def by simp
-qed
+using assms grouphom unfolding BijGroup_def by (auto dest: group_hom.hom_closed)
+
+text {* The action of @{term "inv g"} reverts the action of @{term g} *}
 
 lemma group_inv_rel:
   assumes g:"g \<in> carrier G"
@@ -105,16 +140,24 @@ proof -
   finally show "(\<phi> g) ((\<phi> h) m) = (\<phi> (g \<otimes> h)) m"..
 qed
 
-section{*The orbit relation*}
+subsection {* The orbit relation *}
+
+text {* The following describes the relation containing the information
+whether two elements of @{term M} lie in the same orbit of the action *}
 
 definition same_orbit_rel
   where "same_orbit_rel = {p \<in> M \<times> M. \<exists>g \<in> carrier G. (\<phi> g) (snd p) = (fst p)}"
+
+text {* Use the library about equivalence relations to define the set of
+orbits and the map assigning to each element of @{term M} its orbit *}
 
 definition orbits
  where "orbits = M // same_orbit_rel"
 
 definition orbit :: "'c \<Rightarrow> 'c set"
   where "orbit m = same_orbit_rel `` {m}"
+
+text {* Next, we define a more easy-to-use characterization of an orbit. *}
 
 lemma orbit_char:
   assumes m:"m \<in> M"
@@ -125,24 +168,23 @@ proof(auto)
   assume g:"g \<in> carrier G" and "\<phi> g x \<in> M" "x \<in> M"
   hence "\<phi> (inv g) (\<phi> g x) = x" by (metis group_inv_rel)
   moreover from g have "inv g \<in> carrier G" by (rule inv_closed)
-  ultimately show "\<exists>ga. ga \<in> carrier G \<and> \<phi> ga (\<phi> g x) = x" by auto
+  ultimately show "\<exists>h. h \<in> carrier G \<and> \<phi> h (\<phi> g x) = x" by auto
 next
   fix g
   assume g:"g \<in> carrier G"
   with m show "\<phi> g m \<in> M" by (metis action_closed)
   with m g have "\<phi> (inv g) (\<phi> g m) = m" by (metis group_inv_rel)
   moreover from g have "inv g \<in> carrier G" by (rule inv_closed)
-  ultimately show "\<exists>ga\<in>carrier G. \<phi> ga (\<phi> g m) = m" by auto
+  ultimately show "\<exists>h\<in>carrier G. \<phi> h (\<phi> g m) = m" by auto
 qed
-
-
-definition orbit_set :: "'c set set"
-  where "orbit_set = orbit ` M"
 
 lemma same_orbit_char:
   assumes "m \<in> M" "n \<in> M"
   shows "(m, n) \<in> same_orbit_rel = (\<exists>g \<in> carrier G. ((\<phi> g) n = m))"
 unfolding same_orbit_rel_def using assms by auto
+
+text {* Now we show that the relation we've defined is, indeed, an
+equivalence relation: *}
 
 lemma same_orbit_is_equiv:
   shows "equiv M same_orbit_rel"
@@ -185,13 +227,15 @@ next
   qed
 qed
 
-definition is_transitive :: "bool"
-  where "is_transitive = (\<exists>m' \<in> M. \<forall>m \<in> M. \<exists>g \<in> carrier G. (\<phi> g) m' = m)"
+subsection {* Stabilizer and fixed points *}
+
+text {* The following definition models the stabilizer of a group action: *}
 
 definition stabilizer :: "'c \<Rightarrow> _"
   where "stabilizer m = {g \<in> carrier G. (\<phi> g) m = m}"
 
-(*The stabilizer of m is a subgroup of G*)
+text {*This shows that the stabilizer of @{term m} is a subgroup of @{term G}. *}
+
 lemma stabilizer_is_subgroup:
   assumes m:"m \<in> M"
   shows "subgroup (stabilizer m) G"
@@ -221,6 +265,8 @@ next
   with gh show "g \<otimes> h \<in> stabilizer m" unfolding stabilizer_def by simp
 qed
 
+text {* Next, we define and characterize the fixed points of a group action. *}
+
 definition fixed_points :: "'c set"
   where "fixed_points = {m \<in> M. carrier G \<subseteq> stabilizer m}"
 
@@ -244,18 +290,7 @@ proof
   proof(auto)
     fix g
     assume gG:"g \<in> carrier G"
-    with m have "\<phi> g m \<in> orbit m" unfolding orbit_def same_orbit_rel_def Image_def
-    (*Automatically generated! Replace with nicer things!*)
-    proof -
-      have "\<And>u. orbit u = {uu \<in> M \<times> M. \<exists>x. x \<in> carrier G \<and> \<phi> x (snd uu) = fst uu} `` {u}" using orbit_def same_orbit_rel_def by auto
-      hence f1: "\<And>u. u \<in> M \<longrightarrow> {uu \<in> M \<times> M. \<exists>x. x \<in> carrier G \<and> \<phi> x (snd uu) = fst uu} `` {u} = {uua. \<exists>g. g \<in> carrier G \<and> \<phi> g u = uua}" using orbit_char by simp
-      have "\<exists>ga. ga \<in> carrier G \<and> \<phi> ga m = \<phi> g m" using gG by fastforce
-      hence "\<phi> g m \<in> {uua. \<exists>g. g \<in> carrier G \<and> \<phi> g m = uua}" by fastforce
-      hence "m \<in> M \<and> \<phi> g m \<in> {uua. \<exists>g. g \<in> carrier G \<and> \<phi> g m = uua}" using m by simp
-      hence "\<phi> g m \<in> {uu \<in> M \<times> M. \<exists>x. x \<in> carrier G \<and> \<phi> x (snd uu) = fst uu} `` {m}" using f1 by simp
-      hence "\<exists>R. R \<in> {m} \<and> (R, \<phi> g m) \<in> {uu \<in> M \<times> M. \<exists>x. x \<in> carrier G \<and> \<phi> x (snd uu) = fst uu}" by simp
-      thus "\<phi> g m \<in> {y. \<exists>x\<in>{m}. (x, y) \<in> {p \<in> M \<times> M. \<exists>g\<in>carrier G. \<phi> g (snd p) = fst p}}" by fastforce
-    qed
+    with m have "\<phi> g m \<in> orbit m" by (auto dest:orbit_char)
     with `m \<in> orbit m` card have "\<phi> g m = m" by (auto simp add: card_Suc_eq)
     with gG show "g \<in> stabilizer m" unfolding stabilizer_def by simp
   qed
@@ -273,33 +308,12 @@ next
   thus "card (orbit m) = 1" by simp
 qed
 
-theorem singleton_intersection:
-  assumes A:"card A = 1"
-  assumes B:"card B = 1"
-  assumes noteq:"A \<noteq> B"
-  shows "A \<inter> B = {}"
-using assms by(auto simp:card_Suc_eq)
+subsection {* The Orbit-Stabilizer Theorem *}
 
-theorem card_singleton_set:
-  assumes finA:"finite A"
-  assumes cardOne:"\<forall>x \<in> A.(card x = 1)"
-  shows "card (\<Union>A) = card A"
-proof -
-  from finA have "card (\<Union>A) = (\<Sum>x\<in>A. card x)"
-  proof(rule card_Union_disjoint)
-    from cardOne show "\<forall>A\<in>A. finite A" by (auto intro: card_ge_0_finite)
-  next
-    show "\<forall>x\<in>A. \<forall>y\<in>A. x \<noteq> y \<longrightarrow> x \<inter> y = {}"
-    proof(clarify)
-      fix x y
-      assume x:"x \<in> A" and y:"y \<in> A" and "x \<noteq> y"
-      with cardOne have "card x = 1" "card y = 1" by auto
-      with `x \<noteq> y` show "x \<inter> y = {}" by (metis singleton_intersection)
-    qed
-  qed
-  also from cardOne have "... = card A" by simp
-  finally show ?thesis.
-qed
+text {* This section contains some theorems about orbits and their quotient
+groups. The first one is the well-known orbit-stabilizer theorem which
+establishes a bijection between the the quotient group of the an element's
+stabilizer and its orbit. *}
 
 theorem orbit_thm:
   assumes m:"m \<in> M"
@@ -366,7 +380,9 @@ next
   with stabinvg show "n \<in> (\<lambda>H. \<phi> (inv rep H) m) ` carrier (G Mod stabilizer m)" by simp
 qed
 
-(*Here's what Kuehnlein calls the Bahnbilanzformel*)
+text {* In the case of @{term G} being finite, the last theorem can be reduced
+to a statement about the cardinality of orbit and stabilizer: *}
+
 corollary orbit_size:
   assumes fin:"finite (carrier G)"
   assumes m:"m \<in> M"
@@ -440,6 +456,9 @@ next
   qed
 qed
 
+text {* If @{term G} is a @{term p}-group acting on a finite set, a given orbit is
+either a singleton or @{term p} divides its cardinality. *}
+
 lemma p_dvd_orbit_size:
   assumes orderG:"order G = p ^ a"
   assumes prime:"prime p"
@@ -455,6 +474,9 @@ proof -
   with orderG m have "p ^ a = card N * card (stabilizer m)" by simp
   with `card N > 1` show ?thesis by (metis dvd_mult2 gcd_lcm_complete_lattice_nat.bot.extremum_unique nat_dvd_not_less prime prime_def prime_divexp prime_factor zero_less_one)
 qed
+
+text {* As a result of the last lemma the only orbits that count modulo
+@{term p} are the fixed points *}
 
 lemma fixed_point_congruence:
   assumes "order G = p ^ a"
@@ -485,6 +507,8 @@ proof -
   finally show ?thesis.  
 qed
 
+text {* We can restrict any group action to the action of a subgroup: *}
+
 lemma subgroup_action:
   assumes H:"subgroup H G"
   shows "group_action (G\<lparr>carrier := H\<rparr>) \<phi> M"
@@ -504,7 +528,7 @@ qed
 
 end
 
-section{*Some Examples for Group Actions*}
+subsection {* Some Examples for Group Actions *}
 
 lemma (in group) right_mult_is_bij:
   assumes h:"h \<in> carrier G"
@@ -612,8 +636,5 @@ next
   qed
   finally show "(\<lambda>U\<in>rcosets H. U #> inv (x \<otimes> y)) = (\<lambda>U\<in>rcosets H. U #> inv x) \<otimes>\<^bsub>BijGroup (rcosets H)\<^esub> (\<lambda>U\<in>rcosets H. U #> inv y)" unfolding cosx_def cosy_def by simp
 qed
-
-definition (in group) subgroups_of_size ::"nat \<Rightarrow> _"
-  where "subgroups_of_size p = {H. subgroup H G \<and> card H = p}"
 
 end
