@@ -174,12 +174,39 @@ locale normal_series = group +
 lemma (in normal_series) is_normal_series: "normal_series G \<GG>" by (rule normal_series_axioms)
 
 text {* For every group there is a "trivial" normal series consisting
-only of the group itself and its trivial subgroup *}
+only of the group itself and its trivial subgroup. *}
 
 lemma (in group) trivial_normal_series:
   shows "normal_series G [{\<one>}, carrier G]"
 unfolding normal_series_def normal_series_axioms_def
 using is_group trivial_subgroup_is_normal by auto
+
+text {* We can also show that the normal series presented above is the only such with
+a length of two: *}
+
+lemma (in normal_series) length_two_unique:
+  assumes "length \<GG> = 2"
+  shows "\<GG> = [{\<one>}, carrier G]"
+proof(rule nth_equalityI)
+  from assms show "length \<GG> = length [{\<one>}, carrier G]" by auto
+next
+  show "\<forall>i<length \<GG>. \<GG> ! i = [{\<one>}, carrier G] ! i"
+  proof(rule allI, rule impI)
+    fix i
+    assume i:"i < length \<GG>"
+    with assms have "i = 0 \<or> i = 1" by auto
+    thus "\<GG> ! i = [{\<one>}, carrier G] ! i"
+    proof(rule disjE)
+      assume i:"i = 0"
+      hence "\<GG> ! i = hd \<GG>" by (metis hd_conv_nth notempty)
+      thus "\<GG> ! i = [{\<one>}, carrier G] ! i" using hd i by simp
+    next
+      assume i:"i = 1"
+      with assms have "\<GG> ! i = last \<GG>" by (metis diff_add_inverse last_conv_nth nat_1_add_1 notempty)
+      thus "\<GG> ! i = [{\<one>}, carrier G] ! i" using last i by simp
+    qed
+  qed
+qed
 
 text {* We can construct new normal series by expanding existing ones: If we
 append the carrier of a group @{term G} to a normal series for a normal subgroup
