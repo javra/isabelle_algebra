@@ -8,7 +8,7 @@ imports
   "SndSylow"
 begin
 
-section{*Preliminaries*}
+section {* Preliminaries *}
 
 lemma (in subgroup) subgroup_of_restricted_group:
   assumes "subgroup U (G\<lparr> carrier := H\<rparr>)"
@@ -40,7 +40,91 @@ next
   ultimately show "inv x \<in> U" by simp
 qed
 
-text{* The trivial subgroup is a subgroup: *}
+text {* Being a subgroup is preserved by surjective homomorphisms *}
+
+lemma (in subgroup) surj_hom_subgroup:
+  assumes \<phi>:"group_hom G F \<phi>"
+  assumes \<phi>surj:"\<phi> ` (carrier G) = carrier F"
+  shows "subgroup (\<phi> ` H) F"
+proof
+  from \<phi>surj show img_subset:"\<phi> ` H \<subseteq> carrier F" unfolding iso_def bij_betw_def by auto
+next
+  fix f f'
+	assume h:"f \<in> \<phi> ` H" and h':"f' \<in> \<phi> ` H"
+	with \<phi>surj obtain g g' where g:"g \<in> H" "f = \<phi> g" and g':"g' \<in> H" "f' = \<phi> g'" by auto
+	hence "g \<otimes>\<^bsub>G\<^esub> g' \<in> H" by (metis m_closed)
+  hence "\<phi> (g \<otimes>\<^bsub>G\<^esub> g') \<in> \<phi> ` H" by simp
+  with g g' \<phi> show "f \<otimes>\<^bsub>F\<^esub> f' \<in> \<phi> ` H"  using group_hom.hom_mult by fastforce
+next
+  have "\<phi> \<one> \<in> \<phi> ` H" by auto
+  with \<phi> show  "\<one>\<^bsub>F\<^esub> \<in> \<phi> ` H" by (metis group_hom.hom_one)
+next
+  fix f
+  assume f:"f \<in> \<phi> ` H"
+  then obtain g where g:"g \<in> H" "f = \<phi> g" by auto
+  hence "inv g \<in> H" by auto
+  hence "\<phi> (inv g) \<in> \<phi> ` H" by auto
+  with \<phi> g subset show "inv\<^bsub>F\<^esub> f \<in> \<phi> ` H" using group_hom.hom_inv by fastforce
+qed
+
+text {* ... and thus of course by isomorphisms of groups. *}
+
+lemma iso_subgroup:
+  assumes groups:"group G" "group F"
+  assumes HG:"subgroup H G"
+  assumes \<phi>:"\<phi> \<in> G \<cong> F"
+  shows "subgroup (\<phi> ` H) F"
+proof -
+  from groups \<phi> have "group_hom G F \<phi>" unfolding group_hom_def group_hom_axioms_def iso_def by auto
+  moreover from \<phi> have "\<phi> ` (carrier G) = carrier F" unfolding iso_def bij_betw_def by simp
+  moreover note HG
+  ultimately show ?thesis by (metis subgroup.surj_hom_subgroup)
+qed
+
+text {* Being a normal subgroup is preserved by surjective homomorphisms. *}
+
+lemma (in normal) surj_hom_normal_subgroup:
+  assumes \<phi>:"group_hom G F \<phi>"
+  assumes \<phi>surj:"\<phi> ` (carrier G) = carrier F"
+  shows "(\<phi> ` H) \<lhd> F"
+proof (rule group.normalI)
+  from \<phi> show "group F" unfolding group_hom_def group_hom_axioms_def by simp
+next
+  from \<phi> \<phi>surj show "subgroup (\<phi> ` H) F" by (rule surj_hom_subgroup)
+next
+  show "\<forall>x\<in>carrier F. \<phi> ` H #>\<^bsub>F\<^esub> x = x <#\<^bsub>F\<^esub> \<phi> ` H"
+  proof
+    fix f
+    assume f:"f \<in> carrier F"
+    with \<phi>surj obtain g where g:"g \<in> carrier G" "f = \<phi> g" by auto
+    hence "\<phi> ` H #>\<^bsub>F\<^esub> f = \<phi> ` H #>\<^bsub>F\<^esub> \<phi> g" by simp
+    also have "... = (\<lambda>x. (\<phi> x) \<otimes>\<^bsub>F\<^esub> (\<phi> g)) ` H" unfolding r_coset_def image_def by auto
+    also have "... = (\<lambda>x. \<phi> (x \<otimes> g)) ` H" using subset g \<phi> group_hom.hom_mult unfolding image_def by fastforce
+    also have "... = \<phi> ` (H #> g)" using \<phi> unfolding r_coset_def by auto
+    also have "... = \<phi> ` (g <# H)" by (metis coset_eq g(1))
+    also have "... = (\<lambda>x. \<phi> (g \<otimes> x)) ` H" using \<phi> unfolding l_coset_def by auto
+    also have "... = (\<lambda>x. (\<phi> g) \<otimes>\<^bsub>F\<^esub> (\<phi> x)) ` H" using subset g \<phi> group_hom.hom_mult by fastforce
+    also have "... = \<phi> g <#\<^bsub>F\<^esub> \<phi> ` H" unfolding l_coset_def image_def by auto
+    also have "... = f <#\<^bsub>F\<^esub> \<phi> ` H" using g by simp
+    finally show "\<phi> ` H #>\<^bsub>F\<^esub> f = f <#\<^bsub>F\<^esub> \<phi> ` H".
+  qed
+qed
+
+text {* Being a normal subgroup is preserved by group isomorphisms. *}
+
+lemma iso_subgroup:
+  assumes groups:"group G" "group F"
+  assumes HG:"H \<lhd> G"
+  assumes \<phi>:"\<phi> \<in> G \<cong> F"
+  shows "(\<phi> ` H) \<lhd> F"
+proof -
+  from groups \<phi> have "group_hom G F \<phi>" unfolding group_hom_def group_hom_axioms_def iso_def by auto
+  moreover from \<phi> have "\<phi> ` (carrier G) = carrier F" unfolding iso_def bij_betw_def by simp
+  moreover note HG
+  ultimately show ?thesis using normal.surj_hom_normal_subgroup
+qed
+
+text {* The trivial subgroup is a subgroup: *}
 
 lemma (in group) triv_subgroup:
   shows "subgroup {\<one>} G"
@@ -125,7 +209,7 @@ unfolding normal_def normal_axioms_def r_coset_def l_coset_def by (auto intro: n
 section {*Simple Groups*}
 
 locale simple_group = group +
-  assumes "order G > 1"
+  assumes order_gt_one:"order G > 1"
   assumes "\<And>H. H \<lhd> G \<Longrightarrow> (H = carrier G \<or> H = {\<one>})"
 
 lemma (in simple_group) is_simple_group: "simple_group G" by (rule simple_group_axioms)
@@ -156,6 +240,28 @@ next
     ultimately show ?thesis unfolding order_def by (metis card_eq_subset_imp_eq)
   qed
 qed
+
+text {* Being simple is a property that is preserved by isomorphisms. *}
+
+(*lemma (in simple_group) iso_simple:
+  assumes "group H"
+  assumes iso:"\<phi> \<in> G \<cong> H"
+  shows "simple_group H"
+unfolding simple_group_def simple_group_axioms_def using assms(1)
+proof (auto del: equalityI)
+  from iso have "order G = order H" unfolding iso_def order_def using bij_betw_same_card by auto
+  with order_gt_one show "Suc 0 < order H" by simp
+next
+  fix N
+  assume "N \<lhd> H" and "N \<noteq> {\<one>\<^bsub>H\<^esub>}"
+  def M \<equiv> "(inv_into (carrier G) \<phi>) ` N"
+  have "M \<lhd> G"
+  proof
+    
+    find_theorems "subgroup ?H ?G" name:group_hom
+  qed
+  sorry
+qed*)
 
 section{*Normal Series*}
 
@@ -286,7 +392,7 @@ section {* Composition Series *}
 text {* A composition series is a normal series where all consecutie factor groups are simple: *}
 
 locale composition_series = normal_series +
-  assumes "\<And>i. i + 1 <  length \<GG> \<Longrightarrow> simple_group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
+  assumes simplefact:"\<And>i. i + 1 <  length \<GG> \<Longrightarrow> simple_group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
 
 lemma (in composition_series) is_composition_series:
   shows "composition_series G \<GG>"

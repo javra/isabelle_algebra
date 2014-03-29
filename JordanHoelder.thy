@@ -44,6 +44,7 @@ proof(cases "length \<GG> > 3")
     
   qed
 qed
+oops
 
 text {* As a corollary, we see that the composition series of a fixed group
 all have the same length. *}
