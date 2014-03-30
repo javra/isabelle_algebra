@@ -10,6 +10,17 @@ begin
 
 section {* Preliminaries *}
 
+lemma bij_betw_inv_subset:
+  assumes bij:"bij_betw f A B"
+  assumes "N \<subseteq> B"
+  shows "f ` ((inv_into A f) ` N) = N"
+proof auto
+  fix n
+  assume n:"n \<in> N"
+  show "n \<in> f ` ((inv_into A f) ` N)" using assms image_inv_into_cancel
+qed
+oops
+
 lemma (in subgroup) subgroup_of_restricted_group:
   assumes "subgroup U (G\<lparr> carrier := H\<rparr>)"
   shows "U \<subseteq> H"
@@ -112,7 +123,7 @@ qed
 
 text {* Being a normal subgroup is preserved by group isomorphisms. *}
 
-lemma iso_subgroup:
+lemma iso_normal_subgroup:
   assumes groups:"group G" "group F"
   assumes HG:"H \<lhd> G"
   assumes \<phi>:"\<phi> \<in> G \<cong> F"
@@ -121,7 +132,7 @@ proof -
   from groups \<phi> have "group_hom G F \<phi>" unfolding group_hom_def group_hom_axioms_def iso_def by auto
   moreover from \<phi> have "\<phi> ` (carrier G) = carrier F" unfolding iso_def bij_betw_def by simp
   moreover note HG
-  ultimately show ?thesis using normal.surj_hom_normal_subgroup
+  ultimately show ?thesis using normal.surj_hom_normal_subgroup by metis
 qed
 
 text {* The trivial subgroup is a subgroup: *}
@@ -210,7 +221,7 @@ section {*Simple Groups*}
 
 locale simple_group = group +
   assumes order_gt_one:"order G > 1"
-  assumes "\<And>H. H \<lhd> G \<Longrightarrow> (H = carrier G \<or> H = {\<one>})"
+  assumes no_real_normal_subgroup:"\<And>H. H \<lhd> G \<Longrightarrow> (H = carrier G \<or> H = {\<one>})"
 
 lemma (in simple_group) is_simple_group: "simple_group G" by (rule simple_group_axioms)
 
@@ -243,8 +254,8 @@ qed
 
 text {* Being simple is a property that is preserved by isomorphisms. *}
 
-(*lemma (in simple_group) iso_simple:
-  assumes "group H"
+lemma (in simple_group) iso_simple:
+  assumes H:"group H"
   assumes iso:"\<phi> \<in> G \<cong> H"
   shows "simple_group H"
 unfolding simple_group_def simple_group_axioms_def using assms(1)
@@ -252,16 +263,18 @@ proof (auto del: equalityI)
   from iso have "order G = order H" unfolding iso_def order_def using bij_betw_same_card by auto
   with order_gt_one show "Suc 0 < order H" by simp
 next
+  have inv_iso:"(inv_into (carrier G) \<phi>) \<in> H \<cong> G" using iso by (rule iso_sym)
   fix N
-  assume "N \<lhd> H" and "N \<noteq> {\<one>\<^bsub>H\<^esub>}"
+  assume NH:"N \<lhd> H" and Nneq1:"N \<noteq> {\<one>\<^bsub>H\<^esub>}"
+  then interpret Nnormal: normal N H by simp
   def M \<equiv> "(inv_into (carrier G) \<phi>) ` N"
-  have "M \<lhd> G"
-  proof
-    
-    find_theorems "subgroup ?H ?G" name:group_hom
-  qed
-  sorry
-qed*)
+  hence MG:"M \<lhd> G" using inv_iso NH H by (metis is_group iso_normal_subgroup)
+  from Nneq1 have "M \<noteq> {\<one>}" sorry
+  hence "M = carrier G" using no_real_normal_subgroup MG by auto
+  moreover have surj:"\<phi> ` carrier G = carrier H" using iso unfolding iso_def bij_betw_def by simp
+  hence "\<phi> ` M = N" unfolding M_def using Nnormal.subset image_inv_into_cancel by metis
+  ultimately show "N = carrier H" using surj by simp
+qed
 
 section{*Normal Series*}
 
