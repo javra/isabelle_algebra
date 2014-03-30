@@ -10,17 +10,6 @@ begin
 
 section {* Preliminaries *}
 
-lemma bij_betw_inv_subset:
-  assumes bij:"bij_betw f A B"
-  assumes "N \<subseteq> B"
-  shows "f ` ((inv_into A f) ` N) = N"
-proof auto
-  fix n
-  assume n:"n \<in> N"
-  show "n \<in> f ` ((inv_into A f) ` N)" using assms image_inv_into_cancel
-qed
-oops
-
 lemma (in subgroup) subgroup_of_restricted_group:
   assumes "subgroup U (G\<lparr> carrier := H\<rparr>)"
   shows "U \<subseteq> H"
@@ -269,10 +258,16 @@ next
   then interpret Nnormal: normal N H by simp
   def M \<equiv> "(inv_into (carrier G) \<phi>) ` N"
   hence MG:"M \<lhd> G" using inv_iso NH H by (metis is_group iso_normal_subgroup)
-  from Nneq1 have "M \<noteq> {\<one>}" sorry
+  have surj:"\<phi> ` carrier G = carrier H" using iso unfolding iso_def bij_betw_def by simp
+  hence MN:"\<phi> ` M = N" unfolding M_def using Nnormal.subset image_inv_into_cancel by metis
+  moreover have "M \<noteq> {\<one>}"
+  proof(rule notI)
+    assume "M = {\<one>}"
+    hence "\<phi> ` M = {\<phi> \<one>}" by (metis (full_types) image_empty image_insert)
+    hence "\<phi> ` M = {\<one>\<^bsub>H\<^esub>}" by (metis (lifting) Nnormal.is_subgroup MN calculation singleton_iff subgroup.one_closed)
+    thus False using Nneq1 MN by simp
+  qed
   hence "M = carrier G" using no_real_normal_subgroup MG by auto
-  moreover have surj:"\<phi> ` carrier G = carrier H" using iso unfolding iso_def bij_betw_def by simp
-  hence "\<phi> ` M = N" unfolding M_def using Nnormal.subset image_inv_into_cancel by metis
   ultimately show "N = carrier H" using surj by simp
 qed
 
