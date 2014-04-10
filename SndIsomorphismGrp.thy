@@ -13,6 +13,15 @@ section {* The Second Isomorphism Theorem for Groups *}
 
 subsection {* Preliminaries *}
 
+lemma (in group) triv_subgroup:
+  shows "subgroup {\<one>} G"
+unfolding subgroup_def by auto
+
+lemma (in group) triv_normal_subgroup:
+  shows "{\<one>} \<lhd> G"
+unfolding normal_def normal_axioms_def l_coset_def r_coset_def
+using is_group triv_subgroup by auto
+
 lemma (in group) normal_restrict_supergroup:
   assumes SsubG:"subgroup S G"
   assumes Nnormal:"N \<lhd> G"
@@ -28,6 +37,30 @@ proof -
     thus "\<forall>x\<in>carrier (G\<lparr>carrier := S\<rparr>). N #>\<^bsub>G\<lparr>carrier := S\<rparr>\<^esub> x = x <#\<^bsub>G\<lparr>carrier := S\<rparr>\<^esub> N"
       using Nnormal unfolding normal_def normal_axioms_def l_coset_def r_coset_def by fastforce
   qed
+qed
+
+text {* As this is maybe the best place this fits in: Factorizing by the trivial subgroup
+is an isomorphism. *}
+
+lemma (in group) trivial_factor_iso:
+  shows "the_elem \<in> (G Mod {\<one>}) \<cong> G"
+proof -
+  have "group_hom G G (\<lambda>x. x)" unfolding group_hom_def group_hom_axioms_def hom_def using is_group by simp
+  moreover have "(\<lambda>x. x) ` carrier G = carrier G" by simp
+  moreover have "kernel G G (\<lambda>x. x) = {\<one>}" unfolding kernel_def by auto
+  ultimately show ?thesis using group_hom.FactGroup_iso by force
+qed
+
+text {* And the dual theorem to the previous one: Factorizing by the group itself gives the trivial group *}
+
+lemma (in group) self_factor_iso:
+  shows "(\<lambda>X. the_elem ((\<lambda>x. \<one>) ` X)) \<in> (G Mod (carrier G)) \<cong> G\<lparr> carrier := {\<one>} \<rparr>"
+proof -
+  have "group (G\<lparr>carrier := {\<one>}\<rparr>)" by (metis subgroup_imp_group triv_subgroup)
+  hence "group_hom G (G\<lparr>carrier := {\<one>}\<rparr>) (\<lambda>x. \<one>)" unfolding group_hom_def group_hom_axioms_def hom_def using is_group by auto
+  moreover have "(\<lambda>x. \<one>) ` carrier G = carrier (G\<lparr>carrier := {\<one>}\<rparr>)" by auto
+  moreover have "kernel G (G\<lparr>carrier := {\<one>}\<rparr>) (\<lambda>x. \<one>) = carrier G" unfolding kernel_def by auto
+  ultimately show ?thesis using group_hom.FactGroup_iso by force
 qed
 
 text {* This theory provides a proof of the second isomorphism theorems for groups. 

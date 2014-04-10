@@ -6,6 +6,7 @@
 theory CompositionSeries
 imports
   "SndSylow"
+  "SndIsomorphismGrp"
 begin
 
 section {* Preliminaries *}
@@ -214,6 +215,10 @@ locale simple_group = group +
 
 lemma (in simple_group) is_simple_group: "simple_group G" by (rule simple_group_axioms)
 
+text {* Simple groups are non-trivial. *}
+
+lemma (in simple_group) simple_not_triv: "carrier G \<noteq> {\<one>}" using order_gt_one unfolding order_def by auto
+
 text {* Every group of prime order is simple *}
 
 lemma (in group) prime_order_simple:
@@ -269,6 +274,16 @@ next
   qed
   hence "M = carrier G" using no_real_normal_subgroup MG by auto
   ultimately show "N = carrier H" using surj by simp
+qed
+
+text {* As a corollary of this: Factorizing a group by itself does not result in a simple group! *}
+
+lemma (in group) self_factor_not_simple:"\<not> simple_group (G Mod (carrier G))"
+proof
+  assume assm:"simple_group (G Mod (carrier G))"
+  have "group (G\<lparr>carrier :=  {\<one>}\<rparr>)" by (metis subgroup_imp_group triv_subgroup)
+  with assm self_factor_iso simple_group.iso_simple have "simple_group (G\<lparr>carrier := {\<one>}\<rparr>)" by auto
+  thus "False" using simple_group.simple_not_triv by force
 qed
 
 section{*Normal Series*}
@@ -405,6 +420,56 @@ locale composition_series = normal_series +
 lemma (in composition_series) is_composition_series:
   shows "composition_series G \<GG>"
 by (rule composition_series_axioms)
+
+text {* A composition series of a simple group always is its trivial one. *}
+
+lemma (in composition_series) composition_series_simple_group:
+  shows "(simple_group G) = (\<GG> = [{\<one>}, carrier G])"
+proof
+  assume "\<GG> = [{\<one>}, carrier G]"
+  with simplefact have "simple_group (G Mod {\<one>})" by auto
+  moreover have "the_elem \<in> (G Mod {\<one>}) \<cong> G" by (rule trivial_factor_iso)
+  ultimately show "simple_group G" by (metis is_group simple_group.iso_simple)
+next
+  assume simple:"simple_group G"
+  have "length \<GG> > 1"
+  proof (rule ccontr)
+    assume "\<not> 1 < length \<GG>"
+    hence "length \<GG> = 1" by (metis nat_add_commute nat_less_cases not_add_less1 quotient_list_length) 
+    hence "hd \<GG> = last \<GG>" sorry
+    hence "carrier G = {\<one>}" using hd last by simp
+    hence "order G = 1" unfolding order_def by auto
+    with simple show "False" unfolding simple_group_def simple_group_axioms_def by auto
+  qed
+  moreover have "length \<GG> \<le> 2"
+  proof (rule ccontr)
+    def k \<equiv> "length \<GG> - 2"
+    assume "\<not> (length \<GG> \<le> 2)"
+    hence gt2:"length \<GG> > 2" by simp
+    hence ksmall:"k + 1 < length \<GG>" unfolding k_def by auto
+    from gt2 have carrier:"\<GG> ! (k + 1) = carrier G" using notempty last last_conv_nth k_def
+      by (metis Nat.add_diff_assoc Nat.diff_cancel `\<not> length \<GG> \<le> 2` nat_add_commute nat_le_linear one_add_one)
+    from normal ksmall have "\<GG> ! k \<lhd> G\<lparr> carrier := \<GG> ! (k + 1)\<rparr>" by simp
+    from simplefact ksmall have simplek:"simple_group (G\<lparr>carrier := \<GG> ! (k + 1)\<rparr> Mod \<GG> ! k)" by simp
+    from simplefact ksmall have simplek':"simple_group (G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr> Mod \<GG> ! (k - 1))" by auto
+    have "\<GG> ! k \<lhd> G" using carrier k_def gt2 normal ksmall by force
+    with simple have "(\<GG> ! k) = carrier G \<or> (\<GG> ! k) = {\<one>}" unfolding simple_group_def simple_group_axioms_def by simp
+    thus "False"
+    proof (rule disjE)
+      assume "\<GG> ! k = carrier G"
+      hence "G\<lparr>carrier := \<GG> ! (k + 1)\<rparr> Mod \<GG> ! k = G Mod (carrier G)" using carrier by auto
+      with simplek self_factor_not_simple show "False" by auto
+    next
+      assume "\<GG> ! k = {\<one>}"
+      moreover from k_def gt2 have "(k - 1) + 1 = k" by auto
+      ultimately have "G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr> Mod \<GG> ! (k - 1) = G\<lparr>carrier := {\<one>}\<rparr> Mod \<GG> ! (k - 1)" using simplek' by auto
+      hence "order (G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr> Mod \<GG> ! (k - 1)) = 1" unfolding FactGroup_def order_def RCOSETS_def by force
+      thus "False" using simplek' unfolding simple_group_def simple_group_axioms_def by auto
+    qed
+  qed
+  ultimately have "length \<GG> = 2" by simp
+  thus "\<GG> = [{\<one>}, carrier G]" by (rule length_two_unique)
+qed
 
 text {* The normal series for groups of order @{term "p * q"} is even a composition series: *}
 

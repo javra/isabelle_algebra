@@ -17,8 +17,6 @@ locale jordan_hoelder = group
 context jordan_hoelder
 begin
 
-find_theorems name:iso "group ?G"
-
 theorem jordan_hoelder_quotients:
   obtains \<phi>s \<pi>
   where "length \<phi>s + 1 = length \<GG>"
