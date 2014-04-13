@@ -5,7 +5,6 @@
 
 theory JordanHoelder
 imports
-  "Multiset"
   "CompositionSeries"
 begin
 
@@ -14,33 +13,72 @@ locale jordan_hoelder = group
   + series\<GG>: composition_series G \<GG>
   for \<HH> and \<GG>
 
-context jordan_hoelder
-begin
+(*context jordan_hoelder
+begin*)
 
 theorem jordan_hoelder_quotients:
-  obtains \<phi>s \<pi>
-  where "length \<phi>s + 1 = length \<GG>"
+  shows "group G \<Longrightarrow> composition_series G \<GG> \<Longrightarrow> composition_series G \<HH> \<Longrightarrow> ((\<And>isoms \<pi>.
+        length isoms + 1 = length \<GG> \<Longrightarrow>
+        \<pi> \<in> Bij {0..<length \<GG> - 1} \<Longrightarrow>
+        (\<And>i. i + 1 < length \<GG> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi> i) \<Longrightarrow>
+        thesis) \<Longrightarrow>
+    thesis)"
+  (*assumes comp\<HH>:"composition_series G \<HH>"
+  assumes comp\<GG>:"composition_series G \<GG>"
+  obtains isoms \<pi>
+  where "length isoms + 1 = length \<GG>"
     and "\<pi> \<in> Bij {0 ..< length \<GG> - 1}"
-    and "\<And>i. i+1 < length \<GG> \<Longrightarrow> isoms ! i \<in> series\<GG>.quotient_list ! i \<cong> series\<HH>.quotient_list ! (\<pi> i)"
-proof(cases "length \<GG> > 3")
-  case False
-  hence "length \<GG> = 0 \<or> length \<GG> = 1 \<or> length \<GG> = 2 \<or> length \<GG> = 3" by arith
-  thus thesis using notempty
-  proof auto
-    -- {* First trivial case: The series has length 1. *}
-    assume length:"length \<GG> = Suc 0"
-    hence "length [] + 1 = length \<GG>" by auto
-    moreover from length have empty:"{0 ..< length \<GG> - 1} = {}" by auto
-    then obtain \<pi> where "\<pi> \<in> (extensional {0 ..< length \<GG> - 1}::((nat \<Rightarrow> nat) set))" by (metis restrict_extensional)
-    with empty have "\<pi> \<in> Bij {0 ..< length \<GG> - 1}" unfolding Bij_def bij_betw_def inj_on_def by force
-    ultimately show thesis using that empty by auto
+    and "\<And>i. i+1 < length \<GG> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! (\<pi> i)"*)
+proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
+  case 1
+  then interpret comp\<GG>: composition_series G \<GG> by simp
+  from 1 interpret comp\<HH>: composition_series G \<HH> by simp
+  from 1 interpret grpG: group G by simp
+  show thesis
+  proof (cases "length \<GG> \<le> 2")
+    case True
+    hence "length \<GG> = 0 \<or> length \<GG> = 1 \<or> length \<GG> = 2" by arith
+    with comp\<GG>.notempty have "length \<GG> = 1 \<or> length \<GG> = 2" by auto
+    thus thesis
+    proof (rule disjE)
+      -- {* First trivial case: The series has length 1. *}
+      assume length:"length \<GG> = 1"
+      hence "length [] + 1 = length \<GG>" by auto
+      moreover from length have empty:"{0 ..< length \<GG> - 1} = {}" by auto
+      then obtain \<pi> where "\<pi> \<in> (extensional {0 ..< length \<GG> - 1}::((nat \<Rightarrow> nat) set))" by (metis restrict_extensional)
+      with empty have "\<pi> \<in> Bij {0 ..< length \<GG> - 1}" unfolding Bij_def bij_betw_def by simp
+      ultimately show thesis using 1(5) by fastforce
+    next
+      -- {* Second trivial case: The series has length 2. *}
+      assume length:"length \<GG> = 2"
+      hence \<GG>char:"\<GG> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" by (metis comp\<GG>.length_two_unique)
+      hence "simple_group G" by (metis comp\<GG>.composition_series_simple_group)
+      hence "\<HH> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" "length \<HH> = 2" using comp\<HH>.composition_series_simple_group by auto
+      with \<GG>char length have "comp\<GG>.quotient_list = [G Mod {\<one>\<^bsub>G\<^esub>}]" "comp\<HH>.quotient_list = [G Mod {\<one>\<^bsub>G\<^esub>}]"
+        unfolding comp\<HH>.quotient_list_def comp\<GG>.quotient_list_def by auto
+      hence eq_quotients:"comp\<GG>.quotient_list = comp\<HH>.quotient_list" by simp
+      have "length [(\<lambda>x. x)] + 1 = length \<GG>" using length by simp
+      moreover have "(\<lambda>x\<in>{0..<length \<GG> - 1}.x) \<in> Bij {0 ..< length \<GG> - 1}" using length unfolding Bij_def bij_betw_def by simp
+      ultimately show thesis using 1(5) eq_quotients iso_refl length by fastforce
+    qed 
   next
-    -- {* Second trivial case: The series has length 2. *}
-    assume length:"length \<GG> = 2"
-    hence "\<GG> = [{\<one>}, carrier G]" by (metis series\<GG>.length_two_unique)
-    with length have "series\<GG>.quotient_list = [G Mod {\<one>}]" unfolding quotient_list_def by auto
+    case False
+    hence length:"length \<GG> \<ge> 3" by simp
+    then obtain k where k:"length \<GG> = Suc k" by (metis Suc_eq_plus1 comp\<GG>.quotient_list_length)
+    hence k2:"k \<ge> 2" using length by arith+
+    with k have ksmall:"(k - 1) + 1 < length \<GG>" by auto
+    def G' \<equiv> "\<GG> ! (k - 1)"
+    hence "G' \<lhd> G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr>" using ksmall comp\<GG>.normal by auto
+    hence G'G:"G' \<lhd> G" unfolding G'_def using k2 k comp\<GG>.last last_conv_nth comp\<GG>.notempty by fastforce
+    obtain l where l:"length \<HH> = l + 1" using comp\<HH>.notempty by (metis comp\<HH>.quotient_list_length)
+    have ll:"l \<ge> k" "l \<ge> 2"sorry (*TODO Kleinere Instanz, IV !!!*)
+    with l k have lsmall:"(l - 1) + 1 < length \<HH>" by auto
+    def H' \<equiv> "\<HH> ! (l - 1)"
+    hence "H' \<lhd> G\<lparr>carrier := \<HH> ! ((l - 1) + 1)\<rparr>" using lsmall comp\<HH>.normal by auto
+    hence H'G:"H' \<lhd> G" unfolding H'_def using l ll comp\<HH>.last last_conv_nth comp\<HH>.notempty by fastforce
+    def N \<equiv> "G' \<inter> H'"
+    with H'G G'G have NG:"N \<lhd> G" by (metis comp\<GG>.normal_subgroup_intersect)
     
-  qed
 qed
 oops
 
