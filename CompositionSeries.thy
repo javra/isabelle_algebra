@@ -168,6 +168,30 @@ proof -
   qed
 qed
 
+text {* All entries of a normal series for $G$ are subgroups of $G$. *}
+
+lemma (in normal_series) normal_series_subgroups:
+  shows "i < length \<GG> \<Longrightarrow> subgroup (\<GG> ! i) G"
+proof -
+  have "i + 1 < length \<GG> \<Longrightarrow> subgroup (\<GG> ! i) G"
+  proof (induction "length \<GG> - (i + 2)" arbitrary: i)
+    case 0
+    hence i:"i + 2 = length \<GG>" using assms by simp
+    hence ii:"i + 1 = length \<GG> - 1" using assms by force
+    from i normal have "\<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" by auto
+    with ii last notempty show "subgroup (\<GG> ! i) G" using last_conv_nth normal_imp_subgroup by fastforce
+  next
+    case (Suc k)
+    from Suc(3)  normal have i:"subgroup (\<GG> ! i) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" using normal_imp_subgroup by auto
+    from Suc(2) have k:"k = length \<GG> - ((i + 1) + 2)" by arith
+    with Suc have "subgroup (\<GG> ! (i + 1)) G" by simp
+    with i show "subgroup (\<GG> ! i) G" by (metis is_group subgroup.subgroup_of_subgroup)
+  qed
+  moreover have "i + 1 = length \<GG> \<Longrightarrow> subgroup (\<GG> ! i) G"
+    using last notempty last_conv_nth by (metis add_diff_cancel_right' subgroup_self)
+  ultimately show "i < length \<GG> \<Longrightarrow> subgroup (\<GG> ! i) G" by force
+qed
+
 text {* If a group's order is the product of two distinct primes @{term p} and @{term q}, where
 @{term "p < q"}, we can construct a normal series using the only subgroup of size  @{term q}. *}
 
@@ -210,6 +234,30 @@ locale composition_series = normal_series +
 lemma (in composition_series) is_composition_series:
   shows "composition_series G \<GG>"
 by (rule composition_series_axioms)
+
+text {* A composition series for a group $G$ has length one iff $G$ is the trivial group. *}
+
+lemma (in composition_series) composition_series_triv_group:
+  shows "(carrier G = {\<one>}) = (\<GG> = [{\<one>}])"
+proof
+  assume G:"carrier G = {\<one>}"
+  have "length \<GG> = 1"
+  proof (rule ccontr)
+    assume "length \<GG> \<noteq> 1"
+    with notempty have length:"length \<GG> \<ge> 2" by (metis Suc_eq_plus1 length_0_conv less_2_cases not_less plus_nat.add_0)
+    with simplefact hd hd_conv_nth notempty have "simple_group (G\<lparr>carrier := \<GG> ! 1\<rparr> Mod {\<one>})" by force
+    moreover have SG:"subgroup (\<GG> ! 1) G" using length normal_series_subgroups by auto
+    hence "group (G\<lparr>carrier := \<GG> ! 1\<rparr>)" by (metis subgroup_imp_group)
+    ultimately have  "simple_group (G\<lparr>carrier := \<GG> ! 1\<rparr>)" using group.trivial_factor_iso simple_group.iso_simple by fastforce
+    moreover from SG G have "carrier (G\<lparr>carrier := \<GG> ! 1\<rparr>) = {\<one>}" unfolding subgroup_def by auto
+    ultimately show False using simple_group.simple_not_triv by force
+  qed
+  with hd have "length \<GG> = length [{\<one>}] \<and> (\<forall>i < length \<GG>. \<GG> ! i = [{\<one>}] ! i)" using hd_conv_nth notempty by force
+  thus "\<GG> = [{\<one>}]" using list_eq_iff_nth_eq by blast
+next
+  assume "\<GG> = [{\<one>}]"
+  with last show "carrier G = {\<one>}" by auto
+qed
 
 text {* A composition series of a simple group always is its trivial one. *}
 

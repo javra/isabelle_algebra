@@ -19,16 +19,11 @@ begin*)
 theorem jordan_hoelder_quotients:
   shows "group G \<Longrightarrow> composition_series G \<GG> \<Longrightarrow> composition_series G \<HH> \<Longrightarrow> ((\<And>isoms \<pi>.
         length isoms + 1 = length \<GG> \<Longrightarrow>
+        length \<GG> = length \<HH> \<Longrightarrow>
         \<pi> \<in> Bij {0..<length \<GG> - 1} \<Longrightarrow>
         (\<And>i. i + 1 < length \<GG> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi> i) \<Longrightarrow>
         thesis) \<Longrightarrow>
     thesis)"
-  (*assumes comp\<HH>:"composition_series G \<HH>"
-  assumes comp\<GG>:"composition_series G \<GG>"
-  obtains isoms \<pi>
-  where "length isoms + 1 = length \<GG>"
-    and "\<pi> \<in> Bij {0 ..< length \<GG> - 1}"
-    and "\<And>i. i+1 < length \<GG> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! (\<pi> i)"*)
 proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
   case 1
   then interpret comp\<GG>: composition_series G \<GG> by simp
@@ -44,10 +39,11 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       -- {* First trivial case: The series has length 1. *}
       assume length:"length \<GG> = 1"
       hence "length [] + 1 = length \<GG>" by auto
+      moreover from length have "carrier G = {\<one>\<^bsub>G\<^esub>}" using comp\<GG>.composition_series_triv_group by auto
       moreover from length have empty:"{0 ..< length \<GG> - 1} = {}" by auto
       then obtain \<pi> where "\<pi> \<in> (extensional {0 ..< length \<GG> - 1}::((nat \<Rightarrow> nat) set))" by (metis restrict_extensional)
       with empty have "\<pi> \<in> Bij {0 ..< length \<GG> - 1}" unfolding Bij_def bij_betw_def by simp
-      ultimately show thesis using 1(5) by fastforce
+      ultimately show thesis using 1(5) by auto
     next
       -- {* Second trivial case: The series has length 2. *}
       assume length:"length \<GG> = 2"
@@ -71,14 +67,39 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     hence "G' \<lhd> G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr>" using ksmall comp\<GG>.normal by auto
     hence G'G:"G' \<lhd> G" unfolding G'_def using k2 k comp\<GG>.last last_conv_nth comp\<GG>.notempty by fastforce
     obtain l where l:"length \<HH> = l + 1" using comp\<HH>.notempty by (metis comp\<HH>.quotient_list_length)
-    have ll:"l \<ge> k" "l \<ge> 2"sorry (*TODO Kleinere Instanz, IV !!!*)
-    with l k have lsmall:"(l - 1) + 1 < length \<HH>" by auto
-    def H' \<equiv> "\<HH> ! (l - 1)"
-    hence "H' \<lhd> G\<lparr>carrier := \<HH> ! ((l - 1) + 1)\<rparr>" using lsmall comp\<HH>.normal by auto
-    hence H'G:"H' \<lhd> G" unfolding H'_def using l ll comp\<HH>.last last_conv_nth comp\<HH>.notempty by fastforce
-    def N \<equiv> "G' \<inter> H'"
-    with H'G G'G have NG:"N \<lhd> G" by (metis comp\<GG>.normal_subgroup_intersect)
-    
+    show thesis
+    proof (cases "l \<ge> k")
+      case False
+      with l k have "Suc (length \<HH>) \<le> length \<GG>" by simp
+      with 1 obtain isoms \<pi> where i\<pi>:"length isoms + 1 = length \<HH>"
+        "\<pi> \<in> Bij {0 ..< length \<HH> - 1}"
+        "\<And>i. i+1 < length \<HH> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<HH> ! i \<cong> normal_series.quotient_list G \<GG> ! (\<pi> i)"
+      sorry
+      def \<pi>' \<equiv> "restrict (inv_into {0 ..< length \<GG> - 1} \<pi>) {0 ..< length \<GG> - 1}"
+      def isoms' \<equiv> "map (\<lambda>i. inv_into (carrier (normal_series.quotient_list G \<HH> ! (\<pi>' i)))
+        (isoms ! (\<pi>' i)) ) [0 ..< length \<GG> - 1]"
+      hence "length isoms' + 1 = length \<GG>" by (metis (lifting) Suc_eq_plus1 diff_Suc_1 diff_zero k length_map length_upt)
+      moreover hence "\<pi>' \<in> Bij {0 ..< length \<GG> - 1}" using i\<pi>(2) restrict_inv_into_Bij unfolding \<pi>'_def by simp
+      moreover have "\<And>i. i+1 < length \<HH> \<Longrightarrow> isoms ! i \<in> 
+      find_theorems "Bij" name:inv
+    next
+      case True
+      hence l2:"l \<ge> 2" using l k k2 by simp
+      with l k have lsmall:"(l - 1) + 1 < length \<HH>" by auto
+      def H' \<equiv> "\<HH> ! (l - 1)"
+      hence "H' \<lhd> G\<lparr>carrier := \<HH> ! ((l - 1) + 1)\<rparr>" using lsmall comp\<HH>.normal by auto
+      hence H'G:"H' \<lhd> G" unfolding H'_def using l l2 comp\<HH>.last last_conv_nth comp\<HH>.notempty by fastforce
+      def N \<equiv> "G' \<inter> H'"
+      with H'G G'G have NG:"N \<lhd> G" by (metis comp\<GG>.normal_subgroup_intersect)
+      show thesis
+      proof (cases "N = {\<one>\<^bsub>G\<^esub>}")
+        case True
+        
+      next
+        case False
+      qed
+    qed
+  qed
 qed
 oops
 
