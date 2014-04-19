@@ -224,6 +224,45 @@ proof -
   finally show ?thesis .
 qed
 
+text {* The next lemma transports the constituting properties of a normal series
+along an isomorphism of groups. *}
+
+lemma (in normal_series) normal_series_iso:
+  assumes H:"group H"
+  assumes iso:"\<Psi> \<in> G \<cong> H"
+  shows "normal_series H (map (image \<Psi>) \<GG>)"
+apply (simp add: normal_series_def normal_series_axioms_def)
+using H notempty apply simp
+proof (rule conjI)
+  from H is_group iso have group_hom:"group_hom G H \<Psi>" unfolding group_hom_def group_hom_axioms_def iso_def by auto
+  have "hd (map (image \<Psi>) \<GG>) = \<Psi> ` {\<one>}" by (metis hd_map hd notempty)
+  also have "\<dots> = {\<Psi> \<one>}" by (metis image_empty image_insert)
+  also have "\<dots> = {\<one>\<^bsub>H\<^esub>}" using group_hom group_hom.hom_one by auto
+  finally show "hd (map (op ` \<Psi>) \<GG>) = {\<one>\<^bsub>H\<^esub>}".
+next
+  show "last (map (op ` \<Psi>) \<GG>) = carrier H \<and> (\<forall>i. Suc i < length \<GG> \<longrightarrow> \<Psi> ` \<GG> ! i \<lhd> H\<lparr>carrier := \<Psi> ` \<GG> ! Suc i\<rparr>)"
+  proof (auto del: equalityI)
+    have "last (map (op ` \<Psi>) \<GG>) = \<Psi> ` (carrier G)" using last last_map notempty by metis
+    also have "\<dots> = carrier H" using iso unfolding iso_def bij_betw_def by simp
+    finally show "last (map (op ` \<Psi>) \<GG>) = carrier H".
+  next
+    fix i
+    assume i:"Suc i < length \<GG>"
+    hence norm:"\<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! Suc i\<rparr>" using normal by simp
+    moreover have "restrict \<Psi> (\<GG> ! Suc i) \<in> (G\<lparr>carrier := \<GG> ! Suc i\<rparr>) \<cong> H\<lparr>carrier := \<Psi> ` \<GG> ! Suc i\<rparr>"
+      by (metis H i is_group iso iso_restrict normal_series_subgroups)
+    moreover have "group (G\<lparr>carrier := \<GG> ! Suc i\<rparr>)" by (metis i normal_series_subgroups subgroup_imp_group)
+    moreover hence "subgroup (\<GG> ! Suc i) G" by (metis i normal_series_subgroups)
+    hence "subgroup (\<Psi> ` \<GG> ! Suc i) H" by (metis H is_group iso iso_subgroup)
+    hence "group (H\<lparr>carrier := \<Psi> ` \<GG> ! Suc i\<rparr>)" by (metis H subgroup.subgroup_is_group)
+    ultimately have "restrict \<Psi> (\<GG> ! Suc i) ` \<GG> ! i \<lhd> H\<lparr>carrier := \<Psi> ` \<GG> ! Suc i\<rparr>"
+      using is_group H iso_normal_subgroup by auto
+    moreover from norm have "\<GG> ! i \<subseteq> \<GG> ! Suc i" unfolding normal_def subgroup_def by auto
+    hence "{y. \<exists>x\<in>\<GG> ! i. y = (if x \<in> \<GG> ! Suc i then \<Psi> x else undefined)} = {y. \<exists>x\<in>\<GG> ! i. y = \<Psi> x}" by auto
+    ultimately show "\<Psi> ` \<GG> ! i \<lhd> H\<lparr>carrier := \<Psi> ` \<GG> ! Suc i\<rparr>" unfolding restrict_def image_def by auto
+  qed
+qed
+
 section {* Composition Series *}
 
 text {* A composition series is a normal series where all consecutie factor groups are simple: *}

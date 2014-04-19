@@ -81,6 +81,31 @@ proof -
   ultimately show ?thesis by (metis subgroup.surj_hom_subgroup)
 qed
 
+text {* An isomorphism restricts to an isomorphism of subgroups. *}
+
+lemma iso_restrict:
+  assumes groups:"group G" "group F"
+  assumes HG:"subgroup H G"
+  assumes \<phi>:"\<phi> \<in> G \<cong> F"
+  shows "(restrict \<phi> H) \<in> (G\<lparr>carrier := H\<rparr>) \<cong> (F\<lparr>carrier := \<phi> ` H\<rparr>)"
+unfolding iso_def hom_def bij_betw_def inj_on_def
+proof auto
+  fix g h
+  assume "g \<in> H" "h \<in> H"
+  hence "g \<in> carrier G" "h \<in> carrier G" by (metis HG subgroup.mem_carrier)+
+  thus "\<phi> (g \<otimes>\<^bsub>G\<^esub> h) = \<phi> g \<otimes>\<^bsub>F\<^esub> \<phi> h" using \<phi> unfolding iso_def hom_def by auto
+next
+  fix g h
+  assume "g \<in> H" "h \<in> H" "g \<otimes>\<^bsub>G\<^esub> h \<notin> H"
+  hence "False" using HG unfolding subgroup_def by auto
+  thus "undefined = \<phi> g \<otimes>\<^bsub>F\<^esub> \<phi> h" by auto
+next
+  fix g h
+  assume g:"g \<in> H" and h:"h \<in> H" and eq:"\<phi> g = \<phi> h"
+  hence "g \<in> carrier G" "h \<in> carrier G" by (metis HG subgroup.mem_carrier)+
+  with eq show "g = h" using \<phi> unfolding iso_def bij_betw_def inj_on_def by auto
+qed
+
 text {* The intersection of two subgroups is, again, a subgroup *}
 
 lemma (in group) subgroup_intersect:
