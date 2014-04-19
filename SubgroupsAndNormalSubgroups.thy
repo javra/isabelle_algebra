@@ -182,15 +182,13 @@ next
   hence "rep g \<in> carrier (flatten G rep)" "rep h \<in> carrier (flatten G rep)" unfolding flatten_def by auto
   hence "rep g \<otimes>\<^bsub>flatten G rep\<^esub> rep h
     = rep (the_inv_into (carrier G) rep (rep g) \<otimes>\<^bsub>G\<^esub> the_inv_into (carrier G) rep (rep h))" unfolding flatten_def by auto
-  also have "... = rep (g \<otimes>\<^bsub>G\<^esub> h)" using inj g h by (metis the_inv_into_f_f)
+  also have "\<dots> = rep (g \<otimes>\<^bsub>G\<^esub> h)" using inj g h by (metis the_inv_into_f_f)
   finally show "rep (g \<otimes>\<^bsub>G\<^esub> h) = rep g \<otimes>\<^bsub>flatten G rep\<^esub> rep h"..
 qed
 
 lemma flatten_set_group:
   assumes group:"group G"
   assumes inj:"inj_on rep (carrier G)"
-  (*assumes disjoint:"g \<in> carrier G \<Longrightarrow> h \<in> carrier G \<Longrightarrow> g \<inter> h = {}"*)
-  (*assumes rep:"g \<in> carrier G \<Longrightarrow> rep g \<in> g"*)
   shows "group (flatten G rep)"
 proof (rule groupI)
   fix x y
@@ -209,7 +207,7 @@ next
   assume x:"x \<in> carrier (flatten G rep)" and y:"y \<in> carrier (flatten G rep)" and z:"z \<in> carrier (flatten G rep)"
   def g \<equiv> "the_inv_into (carrier G) rep x" and h \<equiv> "the_inv_into (carrier G) rep y" and k \<equiv> "the_inv_into (carrier G) rep z"
   hence "x \<otimes>\<^bsub>flatten G rep\<^esub> y \<otimes>\<^bsub>flatten G rep\<^esub> z = (rep (g \<otimes>\<^bsub>G\<^esub> h)) \<otimes> \<^bsub>flatten G rep\<^esub> z" unfolding flatten_def by auto
-  also have "... = rep (the_inv_into (carrier G) rep (rep (g \<otimes>\<^bsub>G\<^esub> h)) \<otimes>\<^bsub>G\<^esub> k)" using k_def unfolding flatten_def by auto
+  also have "\<dots> = rep (the_inv_into (carrier G) rep (rep (g \<otimes>\<^bsub>G\<^esub> h)) \<otimes>\<^bsub>G\<^esub> k)" using k_def unfolding flatten_def by auto
   also from g_def h_def k_def have ghkG:"g \<in> carrier G" "h \<in> carrier G" "k \<in> carrier G"
     using inj x y z the_inv_into_into unfolding flatten_def by fastforce+
   hence gh:"g \<otimes>\<^bsub>G\<^esub> h \<in> carrier G" and hk:"h \<otimes>\<^bsub>G\<^esub> k \<in> carrier G" by (metis group group.is_monoid monoid.m_closed)+
@@ -246,5 +244,31 @@ next
   hence "rep (inv\<^bsub>G\<^esub> g) \<otimes>\<^bsub>flatten G rep\<^esub> x = \<one>\<^bsub>flatten G rep\<^esub>" unfolding flatten_def by auto
   ultimately show "\<exists>y\<in>carrier (flatten G rep). y \<otimes>\<^bsub>flatten G rep\<^esub> x = \<one>\<^bsub>flatten G rep\<^esub>" by auto
 qed
+
+lemma (in normal) flatten_set_group_mod_inj:
+  shows "inj_on (\<lambda>U. SOME g. g \<in> U) (carrier (G Mod H))"
+proof (rule inj_onI)
+  fix U V
+  assume U:"U \<in> carrier (G Mod H)" and V:"V \<in> carrier (G Mod H)"
+  then obtain g h where g:"U = H #> g" "g \<in> carrier G" and h:"V = H #> h" "h \<in> carrier G"
+    unfolding FactGroup_def RCOSETS_def by auto
+  hence notempty:"U \<noteq> {}" "V \<noteq> {}" by (metis empty_iff is_subgroup rcos_self)+
+  assume "(SOME g. g \<in> U) = (SOME g. g \<in> V)"
+  with notempty have "(SOME g. g \<in> U) \<in> U \<inter> V" by (metis IntI ex_in_conv someI)
+  thus "U = V" by (metis Int_iff g h is_subgroup repr_independence)
+qed
+
+lemma (in normal) flatten_set_group_mod:
+  shows "group (flatten (G Mod H) (\<lambda>U. SOME g. g \<in> U))"
+using factorgroup_is_group flatten_set_group_mod_inj by (rule flatten_set_group)
+
+lemma (in normal) flatten_set_group_mod_iso:
+  shows "(\<lambda>U. SOME g. g \<in> U) \<in> (G Mod H) \<cong> (flatten (G Mod H) (\<lambda>U. SOME g. g \<in> U))"
+unfolding iso_def bij_betw_def
+apply (auto)
+ apply (metis flatten_set_group_mod_inj factorgroup_is_group flatten_set_group_hom)
+ apply (rule flatten_set_group_mod_inj)
+ unfolding flatten_def apply (auto)
+done
 
 end
