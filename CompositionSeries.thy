@@ -237,6 +237,17 @@ by (rule composition_series_axioms)
 
 text {* A composition series for a group $G$ has length one iff $G$ is the trivial group. *}
 
+lemma (in composition_series) composition_series_length_one:
+  shows "(length \<GG> = 1) = (\<GG> = [{\<one>}])"
+proof
+  assume "length \<GG> = 1"
+  with hd have "length \<GG> = length [{\<one>}] \<and> (\<forall>i < length \<GG>. \<GG> ! i = [{\<one>}] ! i)" using hd_conv_nth notempty by force
+  thus "\<GG> = [{\<one>}]" using list_eq_iff_nth_eq by blast
+next
+  assume "\<GG> = [{\<one>}]"
+  thus "length \<GG> = 1" by simp
+qed
+
 lemma (in composition_series) composition_series_triv_group:
   shows "(carrier G = {\<one>}) = (\<GG> = [{\<one>}])"
 proof
@@ -252,8 +263,7 @@ proof
     moreover from SG G have "carrier (G\<lparr>carrier := \<GG> ! 1\<rparr>) = {\<one>}" unfolding subgroup_def by auto
     ultimately show False using simple_group.simple_not_triv by force
   qed
-  with hd have "length \<GG> = length [{\<one>}] \<and> (\<forall>i < length \<GG>. \<GG> ! i = [{\<one>}] ! i)" using hd_conv_nth notempty by force
-  thus "\<GG> = [{\<one>}]" using list_eq_iff_nth_eq by blast
+  thus "\<GG> = [{\<one>}]" by (metis composition_series_length_one)
 next
   assume "\<GG> = [{\<one>}]"
   with last show "carrier G = {\<one>}" by auto

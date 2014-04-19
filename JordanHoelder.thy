@@ -17,13 +17,11 @@ locale jordan_hoelder = group
 begin*)
 
 theorem jordan_hoelder_quotients:
-  shows "group G \<Longrightarrow> composition_series G \<GG> \<Longrightarrow> composition_series G \<HH> \<Longrightarrow> ((\<And>isoms \<pi>.
-        length isoms + 1 = length \<GG> \<Longrightarrow>
-        length \<GG> = length \<HH> \<Longrightarrow>
+  shows "group G \<Longrightarrow> composition_series G \<GG> \<Longrightarrow> composition_series G \<HH> \<Longrightarrow> 
+        length \<GG> = length \<HH> \<Longrightarrow>((\<And>isoms \<pi>. length isoms + 1 = length \<GG> \<Longrightarrow>
         \<pi> \<in> Bij {0..<length \<GG> - 1} \<Longrightarrow>
         (\<And>i. i + 1 < length \<GG> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi> i) \<Longrightarrow>
-        thesis) \<Longrightarrow>
-    thesis)"
+        thesis) \<Longrightarrow> thesis)"
 proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
   case 1
   then interpret comp\<GG>: composition_series G \<GG> by simp
@@ -39,25 +37,30 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       -- {* First trivial case: The series has length 1. *}
       assume length:"length \<GG> = 1"
       hence "length [] + 1 = length \<GG>" by auto
-      moreover from length have "carrier G = {\<one>\<^bsub>G\<^esub>}" using comp\<GG>.composition_series_triv_group by auto
+      moreover from length have "\<GG> = [{\<one>\<^bsub>G\<^esub>}]" by (metis comp\<GG>.composition_series_length_one)
+      hence "carrier G = {\<one>\<^bsub>G\<^esub>}" by (metis comp\<GG>.composition_series_triv_group)
+      hence "length \<HH> = 1" using comp\<HH>.composition_series_triv_group by simp
+      with length have "length \<GG> = length \<HH>" by simp
       moreover from length have empty:"{0 ..< length \<GG> - 1} = {}" by auto
       then obtain \<pi> where "\<pi> \<in> (extensional {0 ..< length \<GG> - 1}::((nat \<Rightarrow> nat) set))" by (metis restrict_extensional)
       with empty have "\<pi> \<in> Bij {0 ..< length \<GG> - 1}" unfolding Bij_def bij_betw_def by simp
-      ultimately show thesis using 1(5) by auto
+      ultimately show thesis using 1(6) by auto
     next
       -- {* Second trivial case: The series has length 2. *}
       assume length:"length \<GG> = 2"
       hence \<GG>char:"\<GG> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" by (metis comp\<GG>.length_two_unique)
-      hence "simple_group G" by (metis comp\<GG>.composition_series_simple_group)
-      hence "\<HH> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" "length \<HH> = 2" using comp\<HH>.composition_series_simple_group by auto
+      hence simple:"simple_group G" by (metis comp\<GG>.composition_series_simple_group)
+      hence "\<HH> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" and length':"length \<HH> = 2" using comp\<HH>.composition_series_simple_group by auto
       with \<GG>char length have "comp\<GG>.quotient_list = [G Mod {\<one>\<^bsub>G\<^esub>}]" "comp\<HH>.quotient_list = [G Mod {\<one>\<^bsub>G\<^esub>}]"
         unfolding comp\<HH>.quotient_list_def comp\<GG>.quotient_list_def by auto
       hence eq_quotients:"comp\<GG>.quotient_list = comp\<HH>.quotient_list" by simp
       have "length [(\<lambda>x. x)] + 1 = length \<GG>" using length by simp
+      moreover from length length' have "length \<GG> = length \<HH>" by simp
       moreover have "(\<lambda>x\<in>{0..<length \<GG> - 1}.x) \<in> Bij {0 ..< length \<GG> - 1}" using length unfolding Bij_def bij_betw_def by simp
-      ultimately show thesis using 1(5) eq_quotients iso_refl length by fastforce
+      ultimately show thesis using 1(6) eq_quotients iso_refl length by fastforce
     qed 
   next
+    -- {* Non-trivial case: The series is of length $\gt 2$. *}
     case False
     hence length:"length \<GG> \<ge> 3" by simp
     then obtain k where k:"length \<GG> = Suc k" by (metis Suc_eq_plus1 comp\<GG>.quotient_list_length)
@@ -71,17 +74,23 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     proof (cases "l \<ge> k")
       case False
       with l k have "Suc (length \<HH>) \<le> length \<GG>" by simp
-      with 1 obtain isoms \<pi> where i\<pi>:"length isoms + 1 = length \<HH>"
-        "\<pi> \<in> Bij {0 ..< length \<HH> - 1}"
+      then obtain isoms \<pi> where i\<pi>:"length isoms + 1 = length \<HH>" "\<pi> \<in> Bij {0 ..< length \<HH> - 1}" "length \<GG> = length \<HH>"
         "\<And>i. i+1 < length \<HH> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<HH> ! i \<cong> normal_series.quotient_list G \<GG> ! (\<pi> i)"
-      sorry
-      def \<pi>' \<equiv> "restrict (inv_into {0 ..< length \<GG> - 1} \<pi>) {0 ..< length \<GG> - 1}"
-      def isoms' \<equiv> "map (\<lambda>i. inv_into (carrier (normal_series.quotient_list G \<HH> ! (\<pi>' i)))
-        (isoms ! (\<pi>' i)) ) [0 ..< length \<GG> - 1]"
+      by (metis "1.prems"(4) Suc_n_not_le_n)
+      def \<pi>' \<equiv> "(\<lambda>x \<in> {0 ..< length \<GG> - 1}. (inv_into {0 ..< length \<GG> - 1} \<pi>) x)"
+      def isoms' \<equiv> "map (\<lambda>i. inv_into (carrier (normal_series.quotient_list G \<HH> ! (\<pi>' i))) (isoms ! (\<pi>' i)) ) [0 ..< length \<GG> - 1]"
       hence "length isoms' + 1 = length \<GG>" by (metis (lifting) Suc_eq_plus1 diff_Suc_1 diff_zero k length_map length_upt)
-      moreover hence "\<pi>' \<in> Bij {0 ..< length \<GG> - 1}" using i\<pi>(2) restrict_inv_into_Bij unfolding \<pi>'_def by simp
-      moreover have "\<And>i. i+1 < length \<HH> \<Longrightarrow> isoms ! i \<in> 
-      find_theorems "Bij" name:inv
+      moreover have "\<pi>' \<in> Bij {0 ..< length \<GG> - 1}" using i\<pi>(2) i\<pi>(3) unfolding \<pi>'_def by (metis restrict_inv_into_Bij)
+      moreover have "\<And>i. i + 1 < length \<GG> \<Longrightarrow> isoms' ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi>' i"
+      proof -
+        fix i
+        assume "i + 1 < length \<GG>"
+        hence "(\<pi> i) + 1 < length \<GG>" using i\<pi> by auto
+        with i\<pi> have "isoms ! i \<in> normal_series.quotient_list G \<HH> ! i \<cong> normal_series.quotient_list G \<GG> ! (\<pi> i)" by simp
+        
+        show "isoms' ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi>' i" sorry
+      qed
+      ultimately show thesis using 1(6) by auto
     next
       case True
       hence l2:"l \<ge> 2" using l k k2 by simp

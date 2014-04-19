@@ -158,4 +158,93 @@ lemma (in group) normal_subgroup_intersect:
   shows "M \<inter> N \<lhd> G"
 using assms subgroup_intersect is_group normal_inv_iff by simp
 
+section  {* Flattening the type of group carriers *}
+
+text {* Flattening here means to convert the type of group elements from 'a set to 'a.
+This is possible whenever the empty set is not an element of the group. *}
+
+definition flatten where
+  "flatten (G::('a set, 'b) monoid_scheme) rep = \<lparr>carrier=(rep ` (carrier G)),
+      mult=(\<lambda> x y. rep ((the_inv_into (carrier G) rep x) \<otimes>\<^bsub>G\<^esub> (the_inv_into (carrier G) rep y))), one=rep \<one>\<^bsub>G\<^esub> \<rparr>"
+
+lemma flatten_set_group_hom:
+  assumes group:"group G"
+  assumes inj:"inj_on rep (carrier G)"
+  shows "rep \<in> hom G (flatten G rep)"
+unfolding hom_def
+proof auto
+  fix g
+  assume g:"g \<in> carrier G"
+  thus "rep g \<in> carrier (flatten G rep)" unfolding flatten_def by auto
+next
+  fix g h
+  assume g:"g \<in> carrier G" and h:"h \<in> carrier G"
+  hence "rep g \<in> carrier (flatten G rep)" "rep h \<in> carrier (flatten G rep)" unfolding flatten_def by auto
+  hence "rep g \<otimes>\<^bsub>flatten G rep\<^esub> rep h
+    = rep (the_inv_into (carrier G) rep (rep g) \<otimes>\<^bsub>G\<^esub> the_inv_into (carrier G) rep (rep h))" unfolding flatten_def by auto
+  also have "... = rep (g \<otimes>\<^bsub>G\<^esub> h)" using inj g h by (metis the_inv_into_f_f)
+  finally show "rep (g \<otimes>\<^bsub>G\<^esub> h) = rep g \<otimes>\<^bsub>flatten G rep\<^esub> rep h"..
+qed
+
+lemma flatten_set_group:
+  assumes group:"group G"
+  assumes inj:"inj_on rep (carrier G)"
+  (*assumes disjoint:"g \<in> carrier G \<Longrightarrow> h \<in> carrier G \<Longrightarrow> g \<inter> h = {}"*)
+  (*assumes rep:"g \<in> carrier G \<Longrightarrow> rep g \<in> g"*)
+  shows "group (flatten G rep)"
+proof (rule groupI)
+  fix x y
+  assume x:"x \<in> carrier (flatten G rep)" and y:"y \<in> carrier (flatten G rep)"
+  def g \<equiv> "the_inv_into (carrier G) rep x" and h \<equiv> "the_inv_into (carrier G) rep y"
+  hence "x \<otimes>\<^bsub>flatten G rep\<^esub> y = rep (g \<otimes>\<^bsub>G\<^esub> h)" unfolding flatten_def by auto
+  moreover from g_def h_def have "g \<in> carrier G" "h \<in> carrier G" 
+    using inj x y the_inv_into_into unfolding flatten_def by (metis partial_object.select_convs(1) subset_refl)+
+  hence "g \<otimes>\<^bsub>G\<^esub> h \<in> carrier G" by (metis group group.is_monoid monoid.m_closed)
+  hence "rep (g \<otimes>\<^bsub>G\<^esub> h) \<in> carrier (flatten G rep)" unfolding flatten_def by simp
+  ultimately show "x \<otimes>\<^bsub>flatten G rep\<^esub> y \<in> carrier (flatten G rep)" by simp
+next
+  show "\<one>\<^bsub>flatten G rep\<^esub> \<in> carrier (flatten G rep)" unfolding flatten_def by (simp add: group group.is_monoid)
+next
+  fix x y z
+  assume x:"x \<in> carrier (flatten G rep)" and y:"y \<in> carrier (flatten G rep)" and z:"z \<in> carrier (flatten G rep)"
+  def g \<equiv> "the_inv_into (carrier G) rep x" and h \<equiv> "the_inv_into (carrier G) rep y" and k \<equiv> "the_inv_into (carrier G) rep z"
+  hence "x \<otimes>\<^bsub>flatten G rep\<^esub> y \<otimes>\<^bsub>flatten G rep\<^esub> z = (rep (g \<otimes>\<^bsub>G\<^esub> h)) \<otimes> \<^bsub>flatten G rep\<^esub> z" unfolding flatten_def by auto
+  also have "... = rep (the_inv_into (carrier G) rep (rep (g \<otimes>\<^bsub>G\<^esub> h)) \<otimes>\<^bsub>G\<^esub> k)" using k_def unfolding flatten_def by auto
+  also from g_def h_def k_def have ghkG:"g \<in> carrier G" "h \<in> carrier G" "k \<in> carrier G"
+    using inj x y z the_inv_into_into unfolding flatten_def by fastforce+
+  hence gh:"g \<otimes>\<^bsub>G\<^esub> h \<in> carrier G" and hk:"h \<otimes>\<^bsub>G\<^esub> k \<in> carrier G" by (metis group group.is_monoid monoid.m_closed)+
+  hence "rep (the_inv_into (carrier G) rep (rep (g \<otimes>\<^bsub>G\<^esub> h)) \<otimes>\<^bsub>G\<^esub> k) = rep ((g \<otimes>\<^bsub>G\<^esub> h) \<otimes>\<^bsub>G\<^esub> k)"
+    unfolding flatten_def using inj the_inv_into_f_f by fastforce
+  also have "\<dots> = rep (g \<otimes>\<^bsub>G\<^esub> (h \<otimes>\<^bsub>G\<^esub> k))" using group group.is_monoid ghkG monoid.m_assoc by fastforce
+  also have "\<dots> = x \<otimes>\<^bsub>flatten G rep\<^esub> (rep (h \<otimes>\<^bsub>G\<^esub> k))" unfolding g_def flatten_def using hk inj the_inv_into_f_f by fastforce
+  also have "\<dots> = x \<otimes>\<^bsub>flatten G rep\<^esub> (y \<otimes>\<^bsub>flatten G rep\<^esub> z)" unfolding h_def k_def flatten_def using x y by force
+  finally show "x \<otimes>\<^bsub>flatten G rep\<^esub> y \<otimes>\<^bsub>flatten G rep\<^esub> z = x \<otimes>\<^bsub>flatten G rep\<^esub> (y \<otimes>\<^bsub>flatten G rep\<^esub> z)".
+next
+  fix x
+  assume x:"x \<in> carrier (flatten G rep)"
+  def g \<equiv> "the_inv_into (carrier G) rep x"
+  hence gG:"g \<in> carrier G" using inj x unfolding flatten_def using the_inv_into_into by force
+  have "\<one>\<^bsub>G\<^esub> \<in> (carrier G)" by (simp add: group group.is_monoid)
+  hence "the_inv_into (carrier G) rep (\<one>\<^bsub>flatten G rep\<^esub>) = \<one>\<^bsub>G\<^esub>" unfolding flatten_def using the_inv_into_f_f inj by force
+  hence "\<one>\<^bsub>flatten G rep\<^esub> \<otimes>\<^bsub>flatten G rep\<^esub> x = rep (\<one>\<^bsub>G\<^esub> \<otimes>\<^bsub>G\<^esub> g)" unfolding flatten_def g_def by simp
+  also have "\<dots> = rep g" using gG group by (metis group.is_monoid monoid.l_one)
+  also have "\<dots> = x" unfolding g_def using inj x f_the_inv_into_f unfolding flatten_def by force
+  finally show "\<one>\<^bsub>flatten G rep\<^esub> \<otimes>\<^bsub>flatten G rep\<^esub> x = x".
+next
+  from group inj have hom:"rep \<in> hom G (flatten G rep)" using flatten_set_group_hom by auto
+  fix x
+  assume x:"x \<in> carrier (flatten G rep)"
+  def g \<equiv> "the_inv_into (carrier G) rep x"
+  hence gG:"g \<in> carrier G" using inj x unfolding flatten_def using the_inv_into_into by force
+  hence invG:"inv\<^bsub>G\<^esub> g \<in> carrier G" by (metis group group.inv_closed)
+  hence "rep (inv\<^bsub>G\<^esub> g) \<in> carrier (flatten G rep)" unfolding flatten_def by auto
+  moreover have "rep (inv\<^bsub>G\<^esub> g) \<otimes>\<^bsub>flatten G rep\<^esub> x = rep (inv\<^bsub>G\<^esub> g) \<otimes>\<^bsub>flatten G rep\<^esub> (rep g)"
+    unfolding g_def using f_the_inv_into_f inj x unfolding flatten_def by fastforce
+  hence "rep (inv\<^bsub>G\<^esub> g) \<otimes>\<^bsub>flatten G rep\<^esub> x = rep (inv\<^bsub>G\<^esub> g \<otimes>\<^bsub>G\<^esub> g)"
+    using hom unfolding hom_def using gG invG hom_def by auto
+  hence "rep (inv\<^bsub>G\<^esub> g) \<otimes>\<^bsub>flatten G rep\<^esub> x = rep \<one>\<^bsub>G\<^esub>" using invG gG by (metis group group.l_inv)
+  hence "rep (inv\<^bsub>G\<^esub> g) \<otimes>\<^bsub>flatten G rep\<^esub> x = \<one>\<^bsub>flatten G rep\<^esub>" unfolding flatten_def by auto
+  ultimately show "\<exists>y\<in>carrier (flatten G rep). y \<otimes>\<^bsub>flatten G rep\<^esub> x = \<one>\<^bsub>flatten G rep\<^esub>" by auto
+qed
+
 end
