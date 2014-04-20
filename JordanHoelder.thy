@@ -16,17 +16,46 @@ locale jordan_hoelder = group
 (*context jordan_hoelder
 begin*)
 
+lemma (in group) setmult_lcos_assoc:
+     "\<lbrakk>H \<subseteq> carrier G; K \<subseteq> carrier G; x \<in> carrier G\<rbrakk>
+      \<Longrightarrow> x <# K <#> H = x <# (K <#> H)"
+by (force simp add: l_coset_def set_mult_def m_assoc)
+
+lemma (in group) normal_subgroup_setmult:
+  assumes M:"M \<lhd> G" and N:"N \<lhd> G"
+  assumes "M \<inter> N = {\<one>}"
+  shows "M <#> N \<lhd> G"
+proof (rule normalI, auto del:equalityI)
+  from assms interpret sndiso:second_isomorphism_grp M G N
+    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def normal_def by auto
+  show "subgroup (M <#> N) G" by (rule sndiso.normal_set_mult_subgroup)
+next
+  fix g
+  assume g:"g \<in> carrier G"
+  have "M <#> N #> g = M <#> (N #> g)" using g M N setmult_rcos_assoc by (metis normal_inv_iff subgroup_imp_subset)
+  also have "\<dots> = M <#> (g <# N)" using N g by (metis normal.coset_eq)
+  also have "\<dots> = (M #> g) <#> N" using M N g by (metis normal_imp_subgroup rcos_assoc_lcos subgroup_imp_subset)
+  also have "\<dots> = (g <# M) <#> N" using M g by (metis normal.coset_eq)
+  also have "\<dots> = g <# (M <#> N)" using g M N setmult_lcos_assoc by (metis normal_inv_iff subgroup_imp_subset)
+  finally show " M <#> N #> g = g <# (M <#> N)".
+qed
+
 theorem jordan_hoelder_quotients:
-  shows "group G \<Longrightarrow> composition_series G \<GG> \<Longrightarrow> composition_series G \<HH> \<Longrightarrow> 
-        length \<GG> = length \<HH> \<Longrightarrow>((\<And>isoms \<pi>. length isoms + 1 = length \<GG> \<Longrightarrow>
+  assumes "group G"
+  assumes "composition_series G \<GG>"
+  assumes "composition_series G \<HH>"
+  shows "length \<GG> = length \<HH>" and "((\<And>isoms \<pi>. length isoms + 1 = length \<GG> \<Longrightarrow>
         \<pi> \<in> Bij {0..<length \<GG> - 1} \<Longrightarrow>
         (\<And>i. i + 1 < length \<GG> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi> i) \<Longrightarrow>
-        thesis) \<Longrightarrow> thesis)"
+        thesis) \<Longrightarrow> thesis)" using assms
 proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
+  print_cases
   case 1
+  print_cases
+  case 2
   then interpret comp\<GG>: composition_series G \<GG> by simp
-  from 1 interpret comp\<HH>: composition_series G \<HH> by simp
-  from 1 interpret grpG: group G by simp
+  from 2 interpret comp\<HH>: composition_series G \<HH> by simp
+  from 2 interpret grpG: group G by simp
   show thesis
   proof (cases "length \<GG> \<le> 2")
     case True
@@ -44,7 +73,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       moreover from length have empty:"{0 ..< length \<GG> - 1} = {}" by auto
       then obtain \<pi> where "\<pi> \<in> (extensional {0 ..< length \<GG> - 1}::((nat \<Rightarrow> nat) set))" by (metis restrict_extensional)
       with empty have "\<pi> \<in> Bij {0 ..< length \<GG> - 1}" unfolding Bij_def bij_betw_def by simp
-      ultimately show thesis using 1(6) by auto
+      ultimately show thesis using 2 by auto
     next
       -- {* Second trivial case: The series has length 2. *}
       assume length:"length \<GG> = 2"
@@ -57,7 +86,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       have "length [(\<lambda>x. x)] + 1 = length \<GG>" using length by simp
       moreover from length length' have "length \<GG> = length \<HH>" by simp
       moreover have "(\<lambda>x\<in>{0..<length \<GG> - 1}.x) \<in> Bij {0 ..< length \<GG> - 1}" using length unfolding Bij_def bij_betw_def by simp
-      ultimately show thesis using 1(6) eq_quotients iso_refl length by fastforce
+      ultimately show thesis using 2 eq_quotients iso_refl length by fastforce
     qed 
   next
     -- {* Non-trivial case: The series is of length $\gt 2$. *}
@@ -73,24 +102,10 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     show thesis
     proof (cases "l \<ge> k")
       case False
-      with l k have "Suc (length \<HH>) \<le> length \<GG>" by simp
-      then obtain isoms \<pi> where i\<pi>:"length isoms + 1 = length \<HH>" "\<pi> \<in> Bij {0 ..< length \<HH> - 1}" "length \<GG> = length \<HH>"
-        "\<And>i. i+1 < length \<HH> \<Longrightarrow> isoms ! i \<in> normal_series.quotient_list G \<HH> ! i \<cong> normal_series.quotient_list G \<GG> ! (\<pi> i)"
-      by (metis "1.prems"(4) Suc_n_not_le_n)
-      def \<pi>' \<equiv> "(\<lambda>x \<in> {0 ..< length \<GG> - 1}. (inv_into {0 ..< length \<GG> - 1} \<pi>) x)"
-      def isoms' \<equiv> "map (\<lambda>i. inv_into (carrier (normal_series.quotient_list G \<HH> ! (\<pi>' i))) (isoms ! (\<pi>' i)) ) [0 ..< length \<GG> - 1]"
-      hence "length isoms' + 1 = length \<GG>" by (metis (lifting) Suc_eq_plus1 diff_Suc_1 diff_zero k length_map length_upt)
-      moreover have "\<pi>' \<in> Bij {0 ..< length \<GG> - 1}" using i\<pi>(2) i\<pi>(3) unfolding \<pi>'_def by (metis restrict_inv_into_Bij)
-      moreover have "\<And>i. i + 1 < length \<GG> \<Longrightarrow> isoms' ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi>' i"
-      proof -
-        fix i
-        assume "i + 1 < length \<GG>"
-        hence "(\<pi> i) + 1 < length \<GG>" using i\<pi> by auto
-        with i\<pi> have "isoms ! i \<in> normal_series.quotient_list G \<HH> ! i \<cong> normal_series.quotient_list G \<GG> ! (\<pi> i)" by simp
-        
-        show "isoms' ! i \<in> normal_series.quotient_list G \<GG> ! i \<cong> normal_series.quotient_list G \<HH> ! \<pi>' i" sorry
-      qed
-      ultimately show thesis using 1(6) by auto
+      with l k have le:"Suc (length \<HH>) \<le> length \<GG>" by simp
+      moreover hence "length \<HH> = length \<GG>" using "1.hyps" "1.prems" by blast
+      ultimately have "False" by auto
+      thus thesis.. (*This still seems fishy to me, maybe wrong hyp?*)
     next
       case True
       hence l2:"l \<ge> 2" using l k k2 by simp
@@ -103,7 +118,15 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       show thesis
       proof (cases "N = {\<one>\<^bsub>G\<^esub>}")
         case True
+        have "G' \<noteq> H'"
+        proof (rule notI)
+          assume "G' = H'"
+          with True have "G' = {\<one>\<^bsub>G\<^esub>}" "H' = {\<one>\<^bsub>G\<^esub>}" unfolding N_def by auto
+          with length k k2 show "False" unfolding G'_def H'_def using comp\<GG>.inner_elements_not_triv by auto
+        qed
+        hence "G' <#>\<^bsub>G\<^esub> H' \<lhd> G"
         
+        hence "G' <#>\<^bsub>G\<^esub> H' = carrier G" sorry
       next
         case False
       qed

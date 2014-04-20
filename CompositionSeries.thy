@@ -308,6 +308,23 @@ next
   with last show "carrier G = {\<one>}" by auto
 qed
 
+text {* The inner elements of a composition series may not consist of the trivial subgroup or the
+group itself. *}
+
+lemma (in composition_series) inner_elements_not_triv:
+  assumes "i + 1 < length \<GG>"
+  assumes "i > 0"
+  shows "\<GG> ! i \<noteq> {\<one>}"
+proof
+  from assms have "(i - 1) + 1 < length \<GG>" by simp
+  hence simple:"simple_group (G\<lparr>carrier := \<GG> ! ((i - 1) + 1)\<rparr> Mod \<GG> ! (i - 1))" using simplefact by auto
+  assume i:"\<GG> ! i = {\<one>}"
+  moreover from assms have "(i - 1) + 1 = i" by auto
+  ultimately have "G\<lparr>carrier := \<GG> ! ((i - 1) + 1)\<rparr> Mod \<GG> ! (i - 1) = G\<lparr>carrier := {\<one>}\<rparr> Mod \<GG> ! (i - 1)" using i by auto
+  hence "order (G\<lparr>carrier := \<GG> ! ((i - 1) + 1)\<rparr> Mod \<GG> ! (i - 1)) = 1" unfolding FactGroup_def order_def RCOSETS_def by force
+  thus "False" using i simple unfolding simple_group_def simple_group_axioms_def by auto
+qed
+
 text {* A composition series of a simple group always is its trivial one. *}
 
 lemma (in composition_series) composition_series_simple_group:
@@ -348,10 +365,7 @@ next
       with simplek self_factor_not_simple show "False" by auto
     next
       assume "\<GG> ! k = {\<one>}"
-      moreover from k_def gt2 have "(k - 1) + 1 = k" by auto
-      ultimately have "G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr> Mod \<GG> ! (k - 1) = G\<lparr>carrier := {\<one>}\<rparr> Mod \<GG> ! (k - 1)" using simplek' by auto
-      hence "order (G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr> Mod \<GG> ! (k - 1)) = 1" unfolding FactGroup_def order_def RCOSETS_def by force
-      thus "False" using simplek' unfolding simple_group_def simple_group_axioms_def by auto
+      with ksmall k_def gt2 show "False" using inner_elements_not_triv by auto
     qed
   qed
   ultimately have "length \<GG> = 2" by simp

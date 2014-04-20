@@ -183,6 +183,17 @@ lemma (in group) normal_subgroup_intersect:
   shows "M \<inter> N \<lhd> G"
 using assms subgroup_intersect is_group normal_inv_iff by simp
 
+text {* The multiplication of two normal subgroups is a normal subgroup. *}
+
+lemma (in group) normal_subgroup_setmult:
+  assumes "M \<lhd> G" and "N \<lhd> G"
+  assumes "M \<inter> N = {\<one>}"
+  shows "M <#> N \<lhd> G"
+proof
+  
+  find_theorems "subgroup (?X <#>\<^bsub>?G\<^esub> ?Y) ?G"  
+qed
+
 section  {* Flattening the type of group carriers *}
 
 text {* Flattening here means to convert the type of group elements from 'a set to 'a.
