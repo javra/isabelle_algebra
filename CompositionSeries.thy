@@ -471,4 +471,28 @@ proof -
   thus ?thesis by (metis compTake.composition_series_simple_group)
 qed
 
+text {* As a stronger way to state the previous lemma: An entry of a composition series is 
+  simple if and only if it is the second one. *}
+
+lemma (in composition_series) composition_snd_simple_iff:
+  assumes "i < length \<GG>"
+  shows "(simple_group (G\<lparr>carrier :=  \<GG> ! i\<rparr>)) = (i = 1)"
+proof
+  assume simpi:"simple_group (G\<lparr>carrier := \<GG> ! i\<rparr>)"
+  hence "\<GG> ! i \<noteq> {\<one>}" using simple_group.simple_not_triv by force
+  hence "i \<noteq> 0" using hd hd_conv_nth notempty by auto
+  then interpret compTake: composition_series "G\<lparr>carrier := \<GG> ! i\<rparr>" "take (Suc i) \<GG>"
+    using assms composition_series_prefix_closed by (metis diff_Suc_1 less_eq_Suc_le zero_less_Suc)
+  from simpi have "(take (Suc i) \<GG>) = [{\<one>\<^bsub>G\<lparr>carrier := \<GG> ! i\<rparr>\<^esub>}, carrier (G\<lparr>carrier := \<GG> ! i\<rparr>)]"
+    by (metis compTake.composition_series_simple_group)
+  hence "length (take (Suc i) \<GG>) = 2" by auto
+  hence "min (length \<GG>) (Suc i) = 2" by (metis length_take)
+  with assms have "Suc i = 2" by force
+  thus "i = 1" by simp
+next
+  assume i:"i = 1"
+  with assms have "2 \<le> length \<GG>" by simp
+  with i show "simple_group (G\<lparr>carrier := \<GG> ! i\<rparr>)" by (metis composition_series_snd_simple)
+qed
+
 end
