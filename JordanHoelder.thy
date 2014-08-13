@@ -103,6 +103,24 @@ next
         case True
         from length have "simple_group (G\<lparr>carrier := \<GG> ! 1\<rparr>)" by (metis comp\<GG>.composition_series_snd_simple le_add2 one_plus_numeral semiring_norm(3))
         with True have "simple_group (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>)" by simp
+        hence lchar:"l - 1 = 1" by (metis comp\<HH>.composition_snd_simple_iff comp\<HH>.notempty diff_less l_def length_greater_0_conv less_imp_diff_less zero_less_one)
+        hence length\<HH>:"length \<HH> = 3" unfolding l_def by simp
+        have eq0:"\<GG> ! 0 = \<HH> ! 0" using hd_conv_nth comp\<GG>.hd comp\<HH>.hd comp\<GG>.notempty comp\<HH>.notempty by metis
+        moreover have eq1:"\<GG> ! 1 = \<HH> ! 1" using True lchar by simp
+        moreover have eq2:"\<GG> ! 2 = \<HH> ! 2" using length last_conv_nth comp\<GG>.notempty comp\<GG>.last length\<HH> last_conv_nth comp\<HH>.notempty comp\<HH>.last by force
+        -- {* TODO: do this more gracefully *}
+        ultimately have "\<And>i. i < length \<GG> \<Longrightarrow> \<GG> ! i = \<HH> ! i"
+        proof -
+          fix i
+          assume i:"i < length \<GG>"
+          hence "i = 0 \<or> i = 1 \<or> i = 2" using length by arith
+          with eq0 eq1 eq2 show "\<GG> ! i = \<HH> ! i" by auto
+        qed
+        hence "\<GG> = \<HH>" using length length\<HH> by (metis list_eq_iff_nth_eq)
+        thus ?thesis by simp
+      next
+        case False
+        -- {* If \<HH> ! (l - 1) \<noteq> \<GG> ! 1, we have to take a closer look at the quotients: *}
         
       qed
     qed
