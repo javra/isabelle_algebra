@@ -101,8 +101,10 @@ next
       proof (cases "\<HH> ! (l - 1) = \<GG> ! 1")
         -- {* If \<HH> ! (l - 1) = \<GG> ! 1, everything is simple... *}
         case True
+        from length have "simple_group (G\<lparr>carrier := \<GG> ! 1\<rparr>)" by (metis comp\<GG>.composition_series_snd_simple le_add2 one_plus_numeral semiring_norm(3))
+        with True have "simple_group (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>)" by simp
         
-      find_theorems "\<GG> = [?x]"
+      qed
     qed
   qed
 qed
