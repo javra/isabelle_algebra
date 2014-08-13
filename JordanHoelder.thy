@@ -23,7 +23,6 @@ by (force simp add: l_coset_def set_mult_def m_assoc)
 
 lemma (in group) normal_subgroup_setmult:
   assumes M:"M \<lhd> G" and N:"N \<lhd> G"
-  assumes "M \<inter> N = {\<one>}"
   shows "M <#> N \<lhd> G"
 proof (rule normalI, auto del:equalityI)
   from assms interpret sndiso:second_isomorphism_grp M G N
@@ -40,7 +39,75 @@ next
   finally show " M <#> N #> g = g <# (M <#> N)".
 qed
 
-theorem jordan_hoelder_quotients:
+theorem jordan_hoelder_quotients_using_permutations:
+  assumes "group G"
+  assumes "composition_series G \<GG>"
+  assumes "composition_series G \<HH>"
+  shows "length \<GG> = length \<HH>"
+    and "multiset_of normal_series.quotient_list G \<GG> = multiset_of normal_series.quotient_list G \<HH>"
+using assms
+proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
+  print_cases
+  case 1
+  print_cases
+  case 1
+  from "1.hyps"
+  show ?case sorry
+next
+  case 1
+  print_cases
+  case 2
+  then interpret comp\<GG>: composition_series G \<GG> by simp
+  from 2 interpret comp\<HH>: composition_series G \<HH> by simp
+  from 2 interpret grpG: group G by simp
+  show ?case
+  proof (cases "length \<GG> \<le> 3")
+  next
+    find_theorems "length \<GG>"
+    case True
+    hence  "length \<GG> = 0 \<or> length \<GG> = 1 \<or> length \<GG> = 2 \<or> length \<GG> = 3" by arith
+    with comp\<GG>.notempty have  "length \<GG> = 1 \<or> length \<GG> = 2 \<or> length \<GG> = 3" by simp
+    thus ?thesis
+    proof auto
+      -- {* First trivial case: \<GG> is the trivial group. *}
+      assume "length \<GG> = Suc 0"
+      hence length:"length \<GG> = 1" by simp
+      hence "length [] + 1 = length \<GG>" by auto
+      moreover from length have char\<GG>:"\<GG> = [{\<one>\<^bsub>G\<^esub>}]" by (metis comp\<GG>.composition_series_length_one)
+      hence "carrier G = {\<one>\<^bsub>G\<^esub>}" by (metis comp\<GG>.composition_series_triv_group)
+      with length char\<GG> have "\<GG> = \<HH>" using comp\<HH>.composition_series_triv_group by simp
+      thus ?thesis by simp
+    next
+      -- {* Second trivial case: \<GG> is simple. *}
+      assume "length \<GG> = 2"
+      hence \<GG>char:"\<GG> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" by (metis comp\<GG>.length_two_unique)
+      hence simple:"simple_group G" by (metis comp\<GG>.composition_series_simple_group)
+      hence "\<HH> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" using comp\<HH>.composition_series_simple_group by auto
+      with \<GG>char have "\<GG> = \<HH>" by simp
+      thus ?thesis by simp
+    next
+      -- {* Not as trivial: \<GG> has length 3. *}
+      assume length:"length \<GG> = 3"
+      -- {* First we show that \<HH> must have a length of at least 3. *}
+      hence "\<not> simple_group G" using comp\<GG>.composition_series_simple_group by auto
+      hence "\<HH> \<noteq> [{\<one>\<^bsub>G\<^esub>}, carrier G]" using comp\<HH>.composition_series_simple_group by auto
+      hence "length \<HH> \<noteq> 2" using comp\<HH>.length_two_unique by auto
+      moreover from length have "carrier G \<noteq> {\<one>\<^bsub>G\<^esub>}" using comp\<GG>.composition_series_length_one comp\<GG>.composition_series_triv_group by auto
+      hence "length \<HH> \<noteq> 1" using comp\<HH>.composition_series_length_one comp\<HH>.composition_series_triv_group by auto
+      moreover from comp\<HH>.notempty have "length \<HH> \<noteq> 0" by simp
+      ultimately have "length \<HH> \<ge> 3" using comp\<HH>.notempty by arith
+      def l \<equiv> "length \<HH> - 1"
+      show ?thesis
+      proof (cases "\<HH> ! (l - 1) = \<GG> ! 1")
+        -- {* If \<HH> ! (l - 1) = \<GG> ! 1, everything is simple... *}
+        case True
+        
+      find_theorems "\<GG> = [?x]"
+    qed
+  qed
+qed
+
+theorem jordan_hoelder_quotients_using_permutations:
   assumes "group G"
   assumes "composition_series G \<GG>"
   assumes "composition_series G \<HH>"
@@ -52,6 +119,11 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
   print_cases
   case 1
   print_cases
+  case 1
+  from "1.hyps"
+  show ?case sorry
+next
+  case 1
   case 2
   then interpret comp\<GG>: composition_series G \<GG> by simp
   from 2 interpret comp\<HH>: composition_series G \<HH> by simp
@@ -64,6 +136,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     thus thesis
     proof (rule disjE)
       -- {* First trivial case: The series has length 1. *}
+      
       assume length:"length \<GG> = 1"
       hence "length [] + 1 = length \<GG>" by auto
       moreover from length have "\<GG> = [{\<one>\<^bsub>G\<^esub>}]" by (metis comp\<GG>.composition_series_length_one)
@@ -98,6 +171,9 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     def G' \<equiv> "\<GG> ! (k - 1)"
     hence "G' \<lhd> G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr>" using ksmall comp\<GG>.normal by auto
     hence G'G:"G' \<lhd> G" unfolding G'_def using k2 k comp\<GG>.last last_conv_nth comp\<GG>.notempty by fastforce
+    have "simple_group (G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr> Mod G')" 
+      unfolding G'_def using ksmall comp\<GG>.simplefact by auto
+    hence simpGG':"simple_group (G Mod G')" unfolding G'_def using k2 k comp\<GG>.last last_conv_nth comp\<GG>.notempty by fastforce
     obtain l where l:"length \<HH> = l + 1" using comp\<HH>.notempty by (metis comp\<HH>.quotient_list_length)
     show thesis
     proof (cases "l \<ge> k")
@@ -113,6 +189,9 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       def H' \<equiv> "\<HH> ! (l - 1)"
       hence "H' \<lhd> G\<lparr>carrier := \<HH> ! ((l - 1) + 1)\<rparr>" using lsmall comp\<HH>.normal by auto
       hence H'G:"H' \<lhd> G" unfolding H'_def using l l2 comp\<HH>.last last_conv_nth comp\<HH>.notempty by fastforce
+      then interpret snd_isoG'H': second_isomorphism_grp G' G H'
+        using G'G unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def using normal_imp_subgroup
+        by auto
       def N \<equiv> "G' \<inter> H'"
       with H'G G'G have NG:"N \<lhd> G" by (metis comp\<GG>.normal_subgroup_intersect)
       show thesis
@@ -124,11 +203,23 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
           with True have "G' = {\<one>\<^bsub>G\<^esub>}" "H' = {\<one>\<^bsub>G\<^esub>}" unfolding N_def by auto
           with length k k2 show "False" unfolding G'_def H'_def using comp\<GG>.inner_elements_not_triv by auto
         qed
-        hence "G' <#>\<^bsub>G\<^esub> H' \<lhd> G"
-        
-        hence "G' <#>\<^bsub>G\<^esub> H' = carrier G" sorry
+        have "G' <#>\<^bsub>G\<^esub> H' \<lhd> G" by (metis G'G H'G comp\<GG>.normal_subgroup_setmult)
+        hence "carrier (G\<lparr>carrier := (G' <#>\<^bsub>G\<^esub> H')\<rparr> Mod G') \<lhd> G Mod G'"
+          using comp\<GG>.normality_factorization snd_isoG'H'.H_contained_in_set_mult G'G
+          unfolding FactGroup_def by auto
+        hence "carrier (G\<lparr>carrier := (G' <#>\<^bsub>G\<^esub> H')\<rparr> Mod G') = {\<one>\<^bsub>G Mod G'\<^esub>}
+          \<or> carrier (G\<lparr>carrier := (G' <#>\<^bsub>G\<^esub> H')\<rparr> Mod G') = carrier (G Mod G')"
+          using simpGG' unfolding simple_group_def simple_group_axioms_def by auto
+        moreover have "carrier (G\<lparr>carrier := (G' <#>\<^bsub>G\<^esub> H')\<rparr> Mod G') \<noteq> {\<one>\<^bsub>G Mod G'\<^esub>}" sorry
+        ultimately have "carrier (G\<lparr>carrier := (G' <#>\<^bsub>G\<^esub> H')\<rparr> Mod G') = carrier (G Mod G')" by simp
+        then obtain bla where  iso:"bla \<in> (G Mod H') \<cong> G\<lparr>carrier := G'\<rparr>" sorry
+        have "simple_group (G Mod H')" sorry
+        hence "simple_group (G\<lparr>carrier := G'\<rparr>)" by (metis iso comp\<GG>.is_group simple_group.iso_simple snd_isoG'H'.subgroup_is_group)
+        hence "k = 2" sorry
+        show thesis sorry
       next
         case False
+        show thesis sorry
       qed
     qed
   qed

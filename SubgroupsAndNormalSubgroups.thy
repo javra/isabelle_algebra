@@ -6,6 +6,7 @@
 theory SubgroupsAndNormalSubgroups
 imports
   "Coset"
+  "SndSylow"
 begin
 
 section {* More Facts about Subgroups *}
@@ -183,16 +184,39 @@ lemma (in group) normal_subgroup_intersect:
   shows "M \<inter> N \<lhd> G"
 using assms subgroup_intersect is_group normal_inv_iff by simp
 
-text {* The multiplication of two normal subgroups is a normal subgroup. *}
+text {* A subgroup relation survives factoring by a normal subgroup. *}
 
-lemma (in group) normal_subgroup_setmult:
-  assumes "M \<lhd> G" and "N \<lhd> G"
-  assumes "M \<inter> N = {\<one>}"
-  shows "M <#> N \<lhd> G"
-proof
-  
-  find_theorems "subgroup (?X <#>\<^bsub>?G\<^esub> ?Y) ?G"  
+lemma (in group) restrict_normality_to_subgroup:
+  assumes "N \<lhd> G" and "N \<subseteq> H" and "subgroup H G"
+  shows "N \<lhd> G\<lparr>carrier := H\<rparr>"
+proof (rule group.normalI)
+  show "group (G\<lparr>carrier := H\<rparr>)" by (metis assms(3) subgroup_imp_group)
+next
+  show "subgroup N (G\<lparr>carrier := H\<rparr>)"
+    using assms is_group normal_imp_subgroup subgroup.subgroup_of_subset by blast
+next
+  show "\<forall>x\<in>carrier (G\<lparr>carrier := H\<rparr>). N #>\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> x = x <#\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N"
+    using assms(1,3) subgroup_imp_subset
+    unfolding normal_def normal_axioms_def r_coset_def l_coset_def by fastforce
 qed
+
+lemma (in group) normal_subgroup_factorize:
+  assumes "N \<lhd> G" and "N \<subseteq> H" and "subgroup H G"
+  shows "subgroup (rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N) (G Mod N)"
+proof -
+  have "N \<lhd> G\<lparr>carrier := H\<rparr>" using assms by (rule restrict_normality_to_subgroup)
+  hence "group (G\<lparr>carrier := H\<rparr> Mod N)" by (rule normal.factorgroup_is_group)
+  moreover have "carrier (G\<lparr>carrier := H\<rparr> Mod N) \<subseteq> carrier (G Mod N)" unfolding FactGroup_def RCOSETS_def
+    using assms(3) subgroup_imp_subset sorry
+  ultimately show ?thesis sorry
+qed
+
+text {* A normality relation survives factoring by a normal subgroup. *}
+
+lemma (in group) normality_factorization:
+  assumes "N \<lhd> G" and "N \<subseteq> H" and "H \<lhd> G"
+  shows "(rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N) \<lhd> (G Mod N)"
+sorry
 
 section  {* Flattening the type of group carriers *}
 
