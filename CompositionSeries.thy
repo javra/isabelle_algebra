@@ -445,6 +445,8 @@ proof -
   qed
 qed
 
+text {* Prefixes of composition series are also composition series. *}
+
 lemma (in composition_series) composition_series_prefix_closed:
   assumes "i \<le> length \<GG>" and "0 < i"
   shows "composition_series (G\<lparr>carrier := \<GG> ! (i - 1)\<rparr>) (take i \<GG>)"
@@ -455,6 +457,18 @@ next
   fix j
   assume j:"Suc j < length \<GG>" "Suc j < i"
   with simplefact show "simple_group (G\<lparr>carrier := \<GG> ! Suc j\<rparr> Mod \<GG> ! j)" by (metis Suc_eq_plus1)
+qed
+
+text {* The second element in a composition series is simple group. *}
+
+lemma (in composition_series) composition_series_snd_simple:
+  assumes "2 \<le> length \<GG>"
+  shows "simple_group (G\<lparr>carrier := \<GG> ! 1\<rparr>)"
+proof -
+  from assms interpret compTake: composition_series "G\<lparr>carrier := \<GG> ! 1\<rparr>" "take 2 \<GG>" by (metis add_diff_cancel_right' composition_series_prefix_closed one_add_one zero_less_numeral)
+  from assms have "length (take 2 \<GG>) = 2" by (metis add_diff_cancel_right' append_take_drop_id diff_diff_cancel length_append length_drop)
+  hence "(take 2 \<GG>) = [{\<one>\<^bsub>(G\<lparr>carrier := \<GG> ! 1\<rparr>)\<^esub>}, carrier (G\<lparr>carrier := \<GG> ! 1\<rparr>)]" by (rule compTake.length_two_unique)
+  thus ?thesis by (metis compTake.composition_series_simple_group)
 qed
 
 end
