@@ -445,4 +445,16 @@ proof -
   qed
 qed
 
+lemma (in composition_series) composition_series_prefix_closed:
+  assumes "i \<le> length \<GG>" and "0 < i"
+  shows "composition_series (G\<lparr>carrier := \<GG> ! (i - 1)\<rparr>) (take i \<GG>)"
+unfolding composition_series_def composition_series_axioms_def
+proof auto
+  from assms show "normal_series (G\<lparr>carrier := \<GG> ! (i - Suc 0)\<rparr>) (take i \<GG>)" by (metis One_nat_def normal_series_prefix_closed)
+next
+  fix j
+  assume j:"Suc j < length \<GG>" "Suc j < i"
+  with simplefact show "simple_group (G\<lparr>carrier := \<GG> ! Suc j\<rparr> Mod \<GG> ! j)" by (metis Suc_eq_plus1)
+qed
+
 end
