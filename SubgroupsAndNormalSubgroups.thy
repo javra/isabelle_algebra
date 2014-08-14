@@ -139,6 +139,10 @@ using assms unfolding subgroup_def by auto
 
 section {* Facts about Normal Subgroups *}
 
+lemma (in normal) is_normal:
+  shows "H \<lhd> G"
+by (metis coset_eq is_subgroup normalI)
+
 text {* Being a normal subgroup is preserved by surjective homomorphisms. *}
 
 lemma (in normal) surj_hom_normal_subgroup:
@@ -295,6 +299,11 @@ next
   moreover from H' have "set_inv H' \<in> A" using assms inv_FactGroup by (metis subgroup.m_inv_closed subgroup.mem_carrier)
   ultimately show "inv x \<in> \<Union>A" by (metis UnionI)
 qed
+
+lemma (in normal) factgroup_subgroup_union_normal:
+  assumes "A \<lhd> (G Mod H)"
+  shows "(\<Union>A) \<lhd> G"
+sorry
 
 lemma (in normal) factgroup_subgroup_union_factor:
   assumes "subgroup A (G Mod H)"

@@ -38,22 +38,27 @@ proof
   next
     fix A'
     assume A'normal:"A' \<lhd> G Mod H" and A'nottriv:"A' \<noteq> {\<one>\<^bsub>G Mod H\<^esub>}"
-    -- {* This is a huge TODO *}
-    then obtain A where A:"H \<lhd> (G\<lparr>carrier := A\<rparr>)" "A \<lhd> G" "A' = carrier ((G\<lparr>carrier := A\<rparr>) Mod H)" sorry
-    then interpret normalHA: normal H "(G\<lparr>carrier := A\<rparr>)" by metis
+    def A \<equiv> "\<Union>A'"
+    have A2:"A \<lhd> G" using A'normal unfolding A_def by (rule factgroup_subgroup_union_normal)
+    have "H \<in> A'" using A'normal normal_imp_subgroup subgroup.one_closed unfolding FactGroup_def by force
+    hence "H \<subseteq> A" unfolding A_def by auto
+    hence A1:"H \<lhd> (G\<lparr>carrier := A\<rparr>)" using A2 is_normal by (metis is_subgroup maxH.max_normal normal_restrict_supergroup subgroup_self)
+    have A3:"A' = rcosets\<^bsub>G\<lparr>carrier := A\<rparr>\<^esub> H"
+      unfolding A_def using factgroup_subgroup_union_factor A'normal normal_imp_subgroup by auto
+    from A1 interpret normalHA: normal H "(G\<lparr>carrier := A\<rparr>)" by metis
     have "H \<subseteq> A" using normalHA.is_subgroup subgroup_imp_subset by force
-    with A have "A = H \<or> A = carrier G" using maxH.max_normal by auto
+    with A2 have "A = H \<or> A = carrier G" using maxH.max_normal by auto
     thus "A' = carrier (G Mod H)"
     proof (rule disjE)
       assume "A = H"
       hence "carrier (G\<lparr>carrier := A\<rparr> Mod H) = {\<one>\<^bsub>(G\<lparr>carrier := A\<rparr> Mod H)\<^esub>}" by (metis finite is_group normalHA.fact_group_trivial_iff normalHA.subgroup_self normalHA.subset subgroup_finite subgroup_of_restricted_group subgroup_of_subgroup subset_antisym)
       also have "... = {\<one>\<^bsub>G Mod H\<^esub>}" unfolding FactGroup_def by auto
-      finally have "A' = {\<one>\<^bsub>G Mod H\<^esub>}" using A by simp
+      finally have "A' = {\<one>\<^bsub>G Mod H\<^esub>}" using A3 unfolding FactGroup_def by simp
       with A'nottriv show ?thesis..
     next
       assume "A = carrier G"
       hence "(G\<lparr>carrier := A\<rparr> Mod H) = G Mod H" by auto
-      thus "A' = carrier (G Mod H)" using A by simp
+      thus "A' = carrier (G Mod H)" using A3 unfolding FactGroup_def by simp
     qed
   qed
 next
@@ -65,14 +70,13 @@ next
   next
     fix A
     assume A:"A \<lhd> G" "A \<noteq> H" "A \<noteq> carrier G"
-    have HG:"H \<lhd> G" by (metis inv_op_closed2 is_subgroup normal_inv_iff)
     show "\<not> H \<subseteq> A"
     proof
       assume HA:"H \<subseteq> A"
       hence "H \<lhd> (G\<lparr>carrier := A\<rparr>)" by (metis A(1) inv_op_closed2 is_subgroup normal_inv_iff normal_restrict_supergroup)
       then interpret normalHA: normal H "(G\<lparr>carrier := A\<rparr>)" by simp
       from finite have finiteA:"finite A" using A(1) normal_imp_subgroup by (metis subgroup_finite)
-      have "rcosets\<^bsub>(G\<lparr>carrier := A\<rparr>)\<^esub> H \<lhd> G Mod H" using normality_factorization HG HA A(1) by auto
+      have "rcosets\<^bsub>(G\<lparr>carrier := A\<rparr>)\<^esub> H \<lhd> G Mod H" using normality_factorization is_normal HA A(1) by auto
       with simple have "rcosets\<^bsub>(G\<lparr>carrier := A\<rparr>)\<^esub> H = {\<one>\<^bsub>G Mod H\<^esub>} \<or> rcosets\<^bsub>(G\<lparr>carrier := A\<rparr>)\<^esub> H = carrier (G Mod H)"
         unfolding simple_group_def simple_group_axioms_def by auto
       thus "False"
