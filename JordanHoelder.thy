@@ -95,7 +95,7 @@ next
       moreover from length have "carrier G \<noteq> {\<one>\<^bsub>G\<^esub>}" using comp\<GG>.composition_series_length_one comp\<GG>.composition_series_triv_group by auto
       hence "length \<HH> \<noteq> 1" using comp\<HH>.composition_series_length_one comp\<HH>.composition_series_triv_group by auto
       moreover from comp\<HH>.notempty have "length \<HH> \<noteq> 0" by simp
-      ultimately have "length \<HH> \<ge> 3" using comp\<HH>.notempty by arith
+      ultimately have length\<HH>big:"length \<HH> \<ge> 3" using comp\<HH>.notempty by arith
       def l \<equiv> "length \<HH> - 1"
       show ?thesis
       proof (cases "\<HH> ! (l - 1) = \<GG> ! 1")
@@ -121,6 +121,12 @@ next
       next
         case False
         -- {* If \<HH> ! (l - 1) \<noteq> \<GG> ! 1, we have to take a closer look at the quotients: *}
+        -- {* (\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) is a normal subgroup of (\<GG> ! 1) *}
+        have "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) \<lhd> (G\<lparr>carrier := (\<GG> ! 1)\<rparr>)"
+          apply (rule second_isomorphism_grp.normal_subgrp_intersection_normal)
+          unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def l_def
+          using comp\<HH>.normal_series_snd_to_last length comp\<GG>.normal_series_snd_to_last normal_imp_subgroup
+          by (metis One_nat_def Suc_1 diff_Suc_1 diff_Suc_eq_diff_pred normal_imp_subgroup numeral_3_eq_3)
         
       qed
     qed
