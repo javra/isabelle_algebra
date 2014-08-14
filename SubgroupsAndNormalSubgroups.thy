@@ -218,6 +218,20 @@ lemma (in group) normality_factorization:
   shows "(rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N) \<lhd> (G Mod N)"
 sorry
 
+section {* Facts about maximal normal subgroups *}
+
+text {* A maximal normal subgroup of $G$ is a normal subgroup which is not contained in other any proper
+  normal subgroup of $G$. *}
+
+locale max_normal_subgroup = normal + 
+  assumes "\<And>J. J \<lhd> G \<Longrightarrow> J \<noteq> H \<Longrightarrow> J \<noteq> carrier G \<Longrightarrow> \<not> (H \<subseteq> J)"
+
+text {* Another characterization of maximal normal subgroups: The factor group is simple. *}
+
+theorem (in normal)
+  shows "max_normal_subgroup H G = simple_group (G Mod H)"
+sorry
+
 section  {* Flattening the type of group carriers *}
 
 text {* Flattening here means to convert the type of group elements from 'a set to 'a.
