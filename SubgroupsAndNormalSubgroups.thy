@@ -267,6 +267,35 @@ lemma (in normal) factgroup_finite:
   shows "finite (rcosets H)"
 using assms unfolding RCOSETS_def by auto
 
+text {* The union of all the cosets contained in a subgroup of a quotient group acts as a represenation for that subgroup. *}
+
+lemma (in normal) factgroup_subgroup_union_subgroup:
+  assumes "subgroup A (G Mod H)"
+  shows "subgroup (\<Union>A) G" 
+proof
+  from assms show "\<Union>A \<subseteq> carrier G"
+    using subgroup_imp_subset is_subgroup m_closed unfolding FactGroup_def RCOSETS_def r_coset_def
+    by force
+next
+  fix x y
+  assume x:"x \<in> \<Union>A" and y:"y \<in> \<Union>A"
+  then obtain H' H'' where H'H'':"x \<in> H'" "H' \<in> A" "y \<in> H''" "H'' \<in> A" by auto
+  hence "x \<otimes> y \<in> H' <#> H''" unfolding set_mult_def by auto
+  moreover from H'H'' have "H' <#> H'' \<in> A" using assms subgroup.m_closed unfolding FactGroup_def by force
+  ultimately show "x \<otimes> y \<in> \<Union>A" by auto
+next
+  have "H \<in> A" using assms unfolding FactGroup_def using subgroup.one_closed by force
+  moreover have "\<one> \<in> H" by (metis is_subgroup subgroup.one_closed)
+  ultimately show "\<one> \<in> \<Union>A" by (metis UnionI)
+next
+  fix x
+  assume x:"x \<in> \<Union>A"
+  then obtain H' where H':"x \<in> H'" "H' \<in> A" by auto
+  hence "inv x \<in> set_inv H'" unfolding SET_INV_def by auto
+  moreover from H' have "set_inv H' \<in> A" using assms inv_FactGroup by (metis subgroup.m_inv_closed subgroup.mem_carrier)
+  ultimately show "inv x \<in> \<Union>A" by (metis UnionI)
+qed
+
 section  {* Flattening the type of group carriers *}
 
 text {* Flattening here means to convert the type of group elements from 'a set to 'a.
