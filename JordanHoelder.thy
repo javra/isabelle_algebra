@@ -127,7 +127,13 @@ next
           unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def l_def
           using comp\<HH>.normal_series_snd_to_last length comp\<GG>.normal_series_snd_to_last normal_imp_subgroup
           by (metis One_nat_def Suc_1 diff_Suc_1 diff_Suc_eq_diff_pred normal_imp_subgroup numeral_3_eq_3)
-        
+          find_theorems "simple_group (G\<lparr>carrier :=  \<GG> ! 1\<rparr>)"
+        -- {* And since (\<GG> ! 1) is simple its either trivial or (\<GG> ! 1) itself. *}
+        hence "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>} \<or> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))"
+          using comp\<GG>.composition_series_snd_simple unfolding simple_group_def simple_group_axioms_def length
+          by auto
+        moreover have "\<not> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))" sorry
+        ultimately have "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>}" by simp
       qed
     qed
   qed

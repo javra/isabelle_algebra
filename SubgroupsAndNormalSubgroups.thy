@@ -230,7 +230,13 @@ text {* Another characterization of maximal normal subgroups: The factor group i
 
 theorem (in normal)
   shows "max_normal_subgroup H G = simple_group (G Mod H)"
-sorry
+proof
+  assume "max_normal_subgroup H G"
+  show "simple_group (G Mod H)"
+  proof auto
+    
+  qed
+qed
 
 section  {* Flattening the type of group carriers *}
 
