@@ -24,6 +24,13 @@ next
   thus "order G = 1" unfolding order_def by auto
 qed
 
+lemma (in group) finite_pos_order:
+  assumes finite:"finite (carrier G)"
+  shows "0 < order G"
+proof -
+  from one_closed finite show ?thesis unfolding order_def by (metis card_gt_0_iff subgroup_nonempty subgroup_self)
+qed
+
 section {* More Facts about Subgroups *}
 
 lemma (in subgroup) subgroup_of_restricted_group:
@@ -252,6 +259,13 @@ next
   hence "order (G Mod H) = 1" unfolding order_def FactGroup_def by auto
   thus "carrier (G Mod H) = {\<one>\<^bsub>G Mod H\<^esub>}" using factorgroup_is_group by (metis group.order_one_triv_iff)
 qed
+
+text {* Finite groups have finite quotients. *}
+
+lemma (in normal) factgroup_finite:
+  assumes "finite (carrier G)"
+  shows "finite (rcosets H)"
+using assms unfolding RCOSETS_def by auto
 
 section  {* Flattening the type of group carriers *}
 
