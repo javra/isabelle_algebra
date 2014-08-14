@@ -296,6 +296,34 @@ next
   ultimately show "inv x \<in> \<Union>A" by (metis UnionI)
 qed
 
+lemma (in normal) factgroup_subgroup_union_factor:
+  assumes "subgroup A (G Mod H)"
+  shows "A = rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H"
+proof auto
+  fix x
+  assume x:"x \<in> A"
+  then obtain x' where x':"x' \<in> carrier G" "x = H #> x'"
+    using assms subgroup_imp_subset unfolding FactGroup_def RCOSETS_def by force
+  hence "\<one> \<otimes> x' \<in> x" using is_subgroup subgroup.one_closed unfolding r_coset_def by force
+  with x have "\<one> \<otimes> x' \<in> \<Union>A" by auto
+  with x' have "x' \<in> \<Union>A" by (metis l_one)
+  hence "H #> x' \<in> rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H" unfolding RCOSETS_def r_coset_def by auto
+  with x' show "x \<in> rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H" by simp
+next
+  fix U
+  assume U:"U \<in> rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H"
+  then obtain x' where x':"x' \<in> \<Union>A" "U = H #> x'" unfolding RCOSETS_def r_coset_def by auto
+  then obtain H' where H':"x' \<in> H'" "H' \<in> A" by auto
+  from x' have "U #> (inv x') = (H #> x') #> (inv x')" unfolding r_coset_def by auto
+  hence "U #> (inv x') = H #> (x' \<otimes> (inv x'))" by (metis assms coset_mult_assoc factgroup_subgroup_union_subgroup inv_closed subgroup.mem_carrier subset x'(1))
+  hence "U #> (inv x') = H" using x' by (metis assms coset_mult_inv2 factgroup_subgroup_union_subgroup subgroup.mem_carrier subset)
+  hence "U #> (inv x') \<in> A" using assms subgroup.one_closed unfolding FactGroup_def by fastforce
+  hence "(U #> (inv x')) <#> H' \<in> A" using H'(2) assms subgroup.m_closed unfolding FactGroup_def by fastforce
+  moreover have "U = (U #> (inv x')) <#> H'" sorry
+  ultimately show "U \<in> A" by simp
+qed
+
+
 section  {* Flattening the type of group carriers *}
 
 text {* Flattening here means to convert the type of group elements from 'a set to 'a.
