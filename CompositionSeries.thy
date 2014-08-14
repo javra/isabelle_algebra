@@ -196,6 +196,23 @@ proof -
   ultimately show "i < length \<GG> \<Longrightarrow> subgroup (\<GG> ! i) G" by force
 qed
 
+text {* The second to last entry of a normal series is a normal subgroup of G *}
+
+lemma (in normal_series) normal_series_snd_to_last:
+  shows "\<GG> ! (length \<GG> - 2) \<lhd> G"
+proof (cases "2 \<le> length \<GG>")
+  case False
+  with notempty have length:"length \<GG> = 1" by (metis Suc_eq_plus1 leI length_0_conv less_2_cases plus_nat.add_0)
+  with hd have "\<GG> ! (length \<GG> - 2) = {\<one>}" using hd_conv_nth notempty by auto
+  with length show ?thesis by (metis trivial_subgroup_is_normal)
+next
+  case True
+  hence "(length \<GG> - 2) + 1 < length \<GG>" by arith
+  with normal last have "\<GG> ! (length \<GG> - 2) \<lhd> G\<lparr>carrier := \<GG> ! ((length \<GG> - 2) + 1)\<rparr>" by auto
+  with True have "\<GG> ! (length \<GG> - 2) \<lhd> G\<lparr>carrier :=  \<GG> ! (length \<GG> - 1)\<rparr>" by (metis Nat.add_diff_assoc comm_monoid_diff_class.add_diff_cancel_left nat_add_commute one_add_one)
+  with notempty last show ?thesis using last_conv_nth by force
+qed
+
 text {* Just like the expansion of normal series, every prefix of a normal series is again a normal series. *}
 
 lemma (in normal_series) normal_series_prefix_closed:
