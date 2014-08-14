@@ -9,6 +9,21 @@ imports
   "SndSylow"
 begin
 
+section {* Preliminary lemmas *}
+
+text {* A group of order 1 is always the trivial group. *}
+
+lemma (in group) order_one_triv_iff:
+  shows "(order G = 1) = (carrier G = {\<one>})"
+proof
+  assume "order G = 1"
+  find_theorems "{?x}" "card ?y"
+  with one_closed show "carrier G = {\<one>}" unfolding order_def sorry
+next
+  assume "carrier G = {\<one>}"
+  thus "order G = 1" unfolding order_def by auto
+qed
+
 section {* More Facts about Subgroups *}
 
 lemma (in subgroup) subgroup_of_restricted_group:
@@ -218,24 +233,24 @@ lemma (in group) normality_factorization:
   shows "(rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N) \<lhd> (G Mod N)"
 sorry
 
-section {* Facts about maximal normal subgroups *}
+text {* Factoring by a normal subgroups yields the trivial group iff the subgroup is the whole group. *}
 
-text {* A maximal normal subgroup of $G$ is a normal subgroup which is not contained in other any proper
-  normal subgroup of $G$. *}
-
-locale max_normal_subgroup = normal + 
-  assumes "\<And>J. J \<lhd> G \<Longrightarrow> J \<noteq> H \<Longrightarrow> J \<noteq> carrier G \<Longrightarrow> \<not> (H \<subseteq> J)"
-
-text {* Another characterization of maximal normal subgroups: The factor group is simple. *}
-
-theorem (in normal)
-  shows "max_normal_subgroup H G = simple_group (G Mod H)"
+lemma (in normal) fact_group_trivial_iff:
+  assumes "finite (carrier G)"
+  shows "(carrier (G Mod H) = {\<one>\<^bsub>G Mod H\<^esub>}) = (H = carrier G)"
 proof
-  assume "max_normal_subgroup H G"
-  show "simple_group (G Mod H)"
-  proof auto
-    
-  qed
+  assume "carrier (G Mod H) = {\<one>\<^bsub>G Mod H\<^esub>}"
+  moreover with assms lagrange have "order (G Mod H) * card H = order G" unfolding FactGroup_def order_def using is_subgroup by force
+  ultimately have "card H = order G" unfolding order_def by auto
+  thus "H = carrier G" using subgroup_imp_subset is_subgroup assms unfolding order_def by (metis card_eq_subset_imp_eq)
+next
+  from assms have ordergt0:"order G > 0" unfolding order_def by (metis subgroup.finite_imp_card_positive subgroup_self)
+  assume "H = carrier G"
+  hence "card H = order G" unfolding order_def by simp
+  with assms is_subgroup lagrange have "card (rcosets H) * order G = order G" by metis
+  with ordergt0 have "card (rcosets H) = 1" by (metis mult_eq_self_implies_10 nat_mult_commute neq0_conv)
+  hence "order (G Mod H) = 1" unfolding order_def FactGroup_def by auto
+  thus "carrier (G Mod H) = {\<one>\<^bsub>G Mod H\<^esub>}" using factorgroup_is_group by (metis group.order_one_triv_iff)
 qed
 
 section  {* Flattening the type of group carriers *}
