@@ -275,61 +275,52 @@ text {* The union of all the cosets contained in a subgroup of a quotient group 
 
 lemma (in normal) factgroup_subgroup_union_subgroup:
   assumes "subgroup A (G Mod H)"
-  shows "subgroup (\<Union>A) G" 
+  shows "subgroup {x \<in> carrier G. H #> x \<in> A} G" 
 proof
-  from assms show "\<Union>A \<subseteq> carrier G"
-    using subgroup_imp_subset is_subgroup m_closed unfolding FactGroup_def RCOSETS_def r_coset_def
-    by force
+  show "{x \<in> carrier G. H #> x \<in> A} \<subseteq> carrier G" by auto
 next
   fix x y
-  assume x:"x \<in> \<Union>A" and y:"y \<in> \<Union>A"
-  then obtain H' H'' where H'H'':"x \<in> H'" "H' \<in> A" "y \<in> H''" "H'' \<in> A" by auto
-  hence "x \<otimes> y \<in> H' <#> H''" unfolding set_mult_def by auto
-  moreover from H'H'' have "H' <#> H'' \<in> A" using assms subgroup.m_closed unfolding FactGroup_def by force
-  ultimately show "x \<otimes> y \<in> \<Union>A" by auto
+  assume "x \<in> {x \<in> carrier G. H #> x \<in> A}" and "y \<in> {x \<in> carrier G. H #> x \<in> A}"
+  hence x:"x \<in> carrier G" "H #> x \<in> A" and y:"y \<in> carrier G" "H #> y \<in> A" by auto
+  hence xyG:"x \<otimes> y \<in> carrier G" by (metis m_closed)
+  from assms x y have "(H #> x) <#> (H #> y) \<in> A" using subgroup.m_closed unfolding FactGroup_def by fastforce
+  hence "H #> (x \<otimes> y) \<in> A" by (metis rcos_sum x(1) y(1))
+  with xyG show "x \<otimes> y \<in> {x \<in> carrier G. H #> x \<in> A}" by simp
 next
-  have "H \<in> A" using assms unfolding FactGroup_def using subgroup.one_closed by force
-  moreover have "\<one> \<in> H" by (metis is_subgroup subgroup.one_closed)
-  ultimately show "\<one> \<in> \<Union>A" by (metis UnionI)
+  have "H #> \<one> \<in> A" using assms subgroup.one_closed unfolding FactGroup_def by (metis coset_mult_one monoid.select_convs(2) subset)
+  with assms one_closed show "\<one> \<in> {x \<in> carrier G. H #> x \<in> A}" by simp
 next
   fix x
-  assume x:"x \<in> \<Union>A"
-  then obtain H' where H':"x \<in> H'" "H' \<in> A" by auto
-  hence "inv x \<in> set_inv H'" unfolding SET_INV_def by auto
-  moreover from H' have "set_inv H' \<in> A" using assms inv_FactGroup by (metis subgroup.m_inv_closed subgroup.mem_carrier)
-  ultimately show "inv x \<in> \<Union>A" by (metis UnionI)
+  assume "x \<in> {x \<in> carrier G. H #> x \<in> A}"
+  hence x:"x \<in> carrier G" "H #> x \<in> A" by auto
+  hence invx:"inv x \<in> carrier G" using inv_closed by simp
+  from assms x have "set_inv (H #> x) \<in> A" using subgroup.m_inv_closed by (metis inv_FactGroup subgroup.mem_carrier)
+  hence "H #> (inv x) \<in> A" by (metis rcos_inv x(1))
+  with invx show "inv x \<in> {x \<in> carrier G. H #> x \<in> A}" by simp
 qed
 
 lemma (in normal) factgroup_subgroup_union_normal:
   assumes "A \<lhd> (G Mod H)"
-  shows "(\<Union>A) \<lhd> G"
+  shows "{x \<in> carrier G. H #> x \<in> A} \<lhd> G"
 sorry
 
 lemma (in normal) factgroup_subgroup_union_factor:
   assumes "subgroup A (G Mod H)"
-  shows "A = rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H"
+  shows "A = rcosets\<^bsub>G\<lparr>carrier := {x \<in> carrier G. H #> x \<in> A}\<rparr>\<^esub> H"
 proof auto
-  fix x
-  assume x:"x \<in> A"
-  then obtain x' where x':"x' \<in> carrier G" "x = H #> x'"
+  fix U
+  assume U:"U \<in> A"
+  then obtain x' where x':"x' \<in> carrier G" "U = H #> x'"
     using assms subgroup_imp_subset unfolding FactGroup_def RCOSETS_def by force
-  hence "\<one> \<otimes> x' \<in> x" using is_subgroup subgroup.one_closed unfolding r_coset_def by force
-  with x have "\<one> \<otimes> x' \<in> \<Union>A" by auto
-  with x' have "x' \<in> \<Union>A" by (metis l_one)
-  hence "H #> x' \<in> rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H" unfolding RCOSETS_def r_coset_def by auto
-  with x' show "x \<in> rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H" by simp
+  with U have "H #> x' \<in> A" by simp
+  with x' show "U \<in> rcosets\<^bsub>G\<lparr>carrier := {x \<in> carrier G. H #> x \<in> A}\<rparr>\<^esub> H"
+    unfolding RCOSETS_def r_coset_def by auto
 next
   fix U
-  assume U:"U \<in> rcosets\<^bsub>G\<lparr>carrier := \<Union>A\<rparr>\<^esub> H"
-  then obtain x' where x':"x' \<in> \<Union>A" "U = H #> x'" unfolding RCOSETS_def r_coset_def by auto
-  then obtain H' where H':"x' \<in> H'" "H' \<in> A" by auto
-  from x' have "U #> (inv x') = (H #> x') #> (inv x')" unfolding r_coset_def by auto
-  hence "U #> (inv x') = H #> (x' \<otimes> (inv x'))" by (metis assms coset_mult_assoc factgroup_subgroup_union_subgroup inv_closed subgroup.mem_carrier subset x'(1))
-  hence "U #> (inv x') = H" using x' by (metis assms coset_mult_inv2 factgroup_subgroup_union_subgroup subgroup.mem_carrier subset)
-  hence "U #> (inv x') \<in> A" using assms subgroup.one_closed unfolding FactGroup_def by fastforce
-  hence "(U #> (inv x')) <#> H' \<in> A" using H'(2) assms subgroup.m_closed unfolding FactGroup_def by fastforce
-  moreover have "U = (U #> (inv x')) <#> H'" sorry
-  ultimately show "U \<in> A" by simp
+  assume U:"U \<in> rcosets\<^bsub>G\<lparr>carrier := {x \<in> carrier G. H #> x \<in> A}\<rparr>\<^esub> H"
+  then obtain x' where x':"x' \<in> {x \<in> carrier G. H #> x \<in> A}" "U = H #> x'" unfolding RCOSETS_def r_coset_def by auto
+  hence "x' \<in> carrier G" "H #> x' \<in> A" by auto
+  with x' show "U \<in> A" by simp
 qed
 
 
