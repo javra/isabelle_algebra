@@ -146,7 +146,28 @@ next
         with HnormG G1max have "\<not> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))"
           unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
           using False by auto
-        ultimately have "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>}" by simp
+        ultimately have intertriv:"(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>}" by simp
+        have "\<GG> ! 1 \<subseteq> (\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1))"
+          sorry
+        moreover have "\<GG> ! 1 \<noteq> (\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1))" sorry
+        ultimately have "(\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1)) = carrier G" using G1max HnormG comp\<GG>.normal_subgroup_setmult
+          unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def by metis
+        -- {* Find suitable isomophisms... *}
+        then obtain \<phi> where "\<phi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := carrier G\<rparr> Mod (\<GG> ! 1)"
+          using G1max HnormG normal_imp_subgroup second_isomorphism_grp.normal_intersection_quotient_isom intertriv
+          unfolding max_normal_subgroup_def second_isomorphism_grp_def second_isomorphism_grp_axioms_def
+          by metis
+        hence \<phi>:"\<phi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G Mod (\<GG> ! 1)" by auto
+        obtain \<psi> where "\<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>"
+          using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.trivial_factor_iso
+          by metis
+        hence \<psi>:"\<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>" by auto
+        have "group (G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>})" using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group sorry
+        with \<psi> have "inv_into (carrier (G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>})) \<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>}"
+          using group.iso_sym by auto
+        with \<phi> obtain \<phi>' where "\<phi>' \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G Mod (\<GG> ! 1)"
+          using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.iso_trans by metis
+        
       qed
     qed
   qed
