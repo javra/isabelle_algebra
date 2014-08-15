@@ -6,6 +6,7 @@
 theory CompositionSeries
 imports
   "SimpleGroups"
+  "MaximalNormalSubgroups"
 begin
 
 sledgehammer_params[provers = e spass remote_vampire remote_z3]
@@ -510,6 +511,54 @@ next
   assume i:"i = 1"
   with assms have "2 \<le> length \<GG>" by simp
   with i show "simple_group (G\<lparr>carrier := \<GG> ! i\<rparr>)" by (metis composition_series_snd_simple)
+qed
+
+text {* The second to last entry of a normal series is not only a normal subgroup but
+  actually even a \emph{maximal} normal subgroup. *}
+
+lemma (in composition_series) snd_to_last_max_normal:
+  assumes finite:"finite (carrier G)"
+  assumes length:"length \<GG> > 1"
+  shows "max_normal_subgroup (\<GG> ! (length \<GG> - 2)) G"
+unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
+proof (auto del: equalityI)
+  show "\<GG> ! (length \<GG> - 2) \<lhd> G" by (rule normal_series_snd_to_last)
+next 
+  def G' \<equiv> "\<GG> ! (length \<GG> - 2)"
+  from length have length21:"length \<GG> - 2 + 1 = length \<GG> - 1" by arith
+  from length have "length \<GG> - 2 + 1 < length \<GG>" by arith
+  with simplefact have "simple_group (G\<lparr>carrier := \<GG> ! ((length \<GG> - 2) + 1)\<rparr> Mod G')" unfolding G'_def by auto
+  with length21 have simple_last:"simple_group (G Mod G')" using last notempty last_conv_nth by fastforce
+  {
+    assume snd_to_last_eq:"G' = carrier G"
+    hence "carrier (G Mod G') = {\<one>\<^bsub>G Mod G'\<^esub>}"
+    using normal_series_snd_to_last finite normal.fact_group_trivial_iff unfolding G'_def by metis
+    with snd_to_last_eq have "\<not> simple_group (G Mod G')" by (metis self_factor_not_simple)
+    with simple_last show False unfolding G'_def by auto
+  }
+  {
+    fix J
+    assume J:"J \<lhd> G" "J \<noteq> G'" "J \<noteq> carrier G" "G' \<subseteq> J"
+    hence "rcosets\<^bsub>(G\<lparr>carrier := J\<rparr>)\<^esub> G' \<lhd> G Mod G'"  using normality_factorization normal_series_snd_to_last unfolding G'_def by auto
+    with simple_last have "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = {\<one>\<^bsub>G Mod G'\<^esub>} \<or> rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = carrier (G Mod G')"
+      unfolding simple_group_def simple_group_axioms_def by auto
+    thus False 
+    proof
+      have "G' \<lhd> G" unfolding G'_def by (rule normal_series_snd_to_last)
+      with J(1,4) have GJ:"G' \<lhd> (G\<lparr>carrier := J\<rparr>)" by (metis normal_imp_subgroup normal_restrict_supergroup)
+      from finite J(1) have finJ:"finite J" by (auto simp: normal_imp_subgroup subgroup_finite)
+      assume "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = {\<one>\<^bsub>G Mod G'\<^esub>}"
+      hence "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = {\<one>\<^bsub>(G\<lparr>carrier := J\<rparr>) Mod G'\<^esub>}" unfolding FactGroup_def by simp
+      find_theorems "carrier (?x Mod ?y) = {?z}"
+      hence "G' = J" using GJ finJ normal.fact_group_trivial_iff
+        unfolding FactGroup_def by fastforce
+      with J(2) show False by simp
+    next
+      assume "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = carrier (G Mod G')"
+      hence "J = carrier G" sorry
+      with J(3) show False by simp
+    qed
+  }
 qed
 
 end

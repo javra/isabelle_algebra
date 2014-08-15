@@ -6,6 +6,7 @@
 theory JordanHoelder
 imports
   "CompositionSeries"
+  "MaximalNormalSubgroups"
 begin
 
 locale jordan_hoelder = group
