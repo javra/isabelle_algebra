@@ -420,6 +420,25 @@ next
   thus "\<GG> = [{\<one>}, carrier G]" by (rule length_two_unique)
 qed
 
+text {* Two consecutive elements in a composition series are distinct. *}
+
+lemma (in composition_series) entries_distinct:
+  assumes finite:"finite (carrier G)"
+  assumes i:"i + 1 < length \<GG>"
+  shows "\<GG> ! i \<noteq> \<GG> ! (i + 1)"
+proof
+  from finite have "finite  (\<GG> ! (i + 1))" 
+    using i normal_series_subgroups subgroup_imp_subset rev_finite_subset by metis
+  hence fin:"finite (carrier (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>))" by auto
+  from i have norm:"\<GG> ! i \<lhd> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" by (rule normal)
+  assume "\<GG> ! i = \<GG> ! (i + 1)"
+  hence "\<GG> ! i = carrier (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" by auto
+  hence "carrier ((G\<lparr>carrier := (\<GG> ! (i + 1))\<rparr>) Mod (\<GG> ! i)) = {\<one>\<^bsub>(G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>) Mod \<GG> ! i\<^esub>}"
+    using norm fin normal.fact_group_trivial_iff by metis
+  hence "\<not> simple_group ((G\<lparr>carrier := (\<GG> ! (i + 1))\<rparr>) Mod (\<GG> ! i))" by (metis simple_group.simple_not_triv)
+  thus False by (metis i simplefact)
+qed
+
 text {* The normal series for groups of order @{term "p * q"} is even a composition series: *}
 
 lemma (in group) pq_order_composition_series:
