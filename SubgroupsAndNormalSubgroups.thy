@@ -302,7 +302,55 @@ qed
 lemma (in normal) factgroup_subgroup_union_normal:
   assumes "A \<lhd> (G Mod H)"
   shows "{x \<in> carrier G. H #> x \<in> A} \<lhd> G"
-sorry
+unfolding normal_def normal_axioms_def
+proof auto (*(auto del: equalityI)*)
+  from assms show "subgroup {x \<in> carrier G. H #> x \<in> A} G" by (metis (full_types) factgroup_subgroup_union_subgroup normal_imp_subgroup)
+next
+  show "group G" by (rule is_group)
+next
+  interpret Anormal: normal A "(G Mod H)" using assms by simp
+  fix x y
+  assume x:"x \<in> carrier G" "y \<in> {x \<in> carrier G. H #> x \<in> A} #> x"
+  then obtain x' where "x' \<in> {x \<in> carrier G. H #> x \<in> A}" "y = x' \<otimes> x" unfolding r_coset_def by auto
+  hence x':"x' \<in> carrier G" "H #> x' \<in> A" by auto
+  from x(1) have Hx:"H #> x \<in> carrier (G Mod H)" unfolding FactGroup_def RCOSETS_def by force
+  with x' have "(inv\<^bsub>G Mod H\<^esub> (H #> x)) \<otimes>\<^bsub>G Mod H\<^esub> (H #> x') \<otimes>\<^bsub>G Mod H\<^esub> (H #> x) \<in> A" using Anormal.inv_op_closed1 by auto
+  hence "(set_inv (H #> x)) <#> (H #> x') <#> (H #> x) \<in> A" using inv_FactGroup Hx unfolding FactGroup_def by auto
+  hence "(H #> (inv x)) <#> (H #> x') <#> (H #> x) \<in> A" using x(1) by (metis rcos_inv)
+  hence "(H #> (inv x \<otimes> x')) <#> (H #> x) \<in> A" by (metis inv_closed rcos_sum x'(1) x(1))
+  hence "H #> (inv x \<otimes> x' \<otimes> x) \<in> A" by (metis inv_closed m_closed rcos_sum x'(1) x(1))
+  moreover have "inv x \<otimes> x' \<otimes> x \<in> carrier G" using x x' by (metis inv_closed m_closed)
+  ultimately have "inv x \<otimes> x' \<otimes> x \<in> {x \<in> carrier G. H #> x \<in> A}" by auto
+  hence xcoset:"x \<otimes> (inv x \<otimes> x' \<otimes> x) \<in> x <# {x \<in> carrier G. H #> x \<in> A}" unfolding l_coset_def using x(1) by auto
+  have "x \<otimes> (inv x \<otimes> x' \<otimes> x) = (x \<otimes> inv x) \<otimes> x' \<otimes> x" by (metis Units_eq Units_inv_Units m_assoc m_closed x'(1) x(1))
+  also have "\<dots> = x' \<otimes> x" by (metis l_one r_inv x'(1) x(1))
+  also have "\<dots> = y" by (metis `y = x' \<otimes> x`)
+  finally have "x \<otimes> (inv x \<otimes> x' \<otimes> x) = y".
+  with xcoset show "y \<in> x <# {x \<in> carrier G. H #> x \<in> A}" by auto
+next
+  interpret Anormal: normal A "(G Mod H)" using assms by simp
+  fix x y
+  assume x:"x \<in> carrier G" "y \<in> x <# {x \<in> carrier G. H #> x \<in> A}"
+  then obtain x' where "x' \<in> {x \<in> carrier G. H #> x \<in> A}" "y = x \<otimes> x'" unfolding l_coset_def by auto
+  hence x':"x' \<in> carrier G" "H #> x' \<in> A" by auto
+  from x(1) have invx:"inv x \<in> carrier G" by (rule inv_closed)
+  hence Hinvx:"H #> (inv x) \<in> carrier (G Mod H)" unfolding FactGroup_def RCOSETS_def by force
+  with x' have "(inv\<^bsub>G Mod H\<^esub> (H #> inv x)) \<otimes>\<^bsub>G Mod H\<^esub> (H #> x') \<otimes>\<^bsub>G Mod H\<^esub> (H #> inv x) \<in> A"
+    using invx Anormal.inv_op_closed1 by auto
+  hence "(set_inv (H #> inv x)) <#> (H #> x') <#> (H #> inv x) \<in> A" using inv_FactGroup Hinvx unfolding FactGroup_def by auto
+  hence "(H #> inv (inv x)) <#> (H #> x') <#> (H #> inv x) \<in> A" using invx by (metis rcos_inv)
+  hence "(H #> x) <#> (H #> x') <#> (H #> inv x) \<in> A" by (metis inv_inv x(1))
+  hence "(H #> (x \<otimes> x')) <#> (H #> inv x) \<in> A" by (metis rcos_sum x'(1) x(1))
+  hence "H #> (x \<otimes> x' \<otimes> inv x) \<in> A" by (metis inv_closed m_closed rcos_sum x'(1) x(1))
+  moreover have "x \<otimes> x' \<otimes> inv x \<in> carrier G" using x x' by (metis inv_closed m_closed)
+  ultimately have "x \<otimes> x' \<otimes> inv x \<in> {x \<in> carrier G. H #> x \<in> A}" by auto
+  hence xcoset:"(x \<otimes> x' \<otimes> inv x) \<otimes> x \<in> {x \<in> carrier G. H #> x \<in> A} #> x" unfolding r_coset_def using invx by auto
+  have "(x \<otimes> x' \<otimes> inv x) \<otimes> x = (x \<otimes> x') \<otimes> (inv x \<otimes> x)" by (metis Units_eq Units_inv_Units m_assoc m_closed x'(1) x(1))
+  also have "\<dots> = x \<otimes> x'" using x(1) l_inv x'(1) m_closed r_one by auto
+  also have "\<dots> = y" by (metis `y = x \<otimes> x'`)
+  finally have "x \<otimes> x' \<otimes> inv x \<otimes> x = y".
+  with xcoset show "y \<in> {x \<in> carrier G. H #> x \<in> A} #> x" by auto
+qed
 
 lemma (in normal) factgroup_subgroup_union_factor:
   assumes "subgroup A (G Mod H)"
