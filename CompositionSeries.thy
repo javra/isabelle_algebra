@@ -537,25 +537,39 @@ next
     with simple_last show False unfolding G'_def by auto
   }
   {
+    have G'G:"G' \<lhd> G" unfolding G'_def by (rule normal_series_snd_to_last)
     fix J
     assume J:"J \<lhd> G" "J \<noteq> G'" "J \<noteq> carrier G" "G' \<subseteq> J"
-    hence "rcosets\<^bsub>(G\<lparr>carrier := J\<rparr>)\<^esub> G' \<lhd> G Mod G'"  using normality_factorization normal_series_snd_to_last unfolding G'_def by auto
-    with simple_last have "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = {\<one>\<^bsub>G Mod G'\<^esub>} \<or> rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = carrier (G Mod G')"
+    hence JG'GG':"rcosets\<^bsub>(G\<lparr>carrier := J\<rparr>)\<^esub> G' \<lhd> G Mod G'"  using normality_factorization normal_series_snd_to_last unfolding G'_def by auto
+    from G'G J(1,4) have G'J:"G' \<lhd> (G\<lparr>carrier := J\<rparr>)" by (metis normal_imp_subgroup normal_restrict_supergroup)
+    from finite J(1) have finJ:"finite J" by (auto simp: normal_imp_subgroup subgroup_finite)
+    from JG'GG' simple_last have "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = {\<one>\<^bsub>G Mod G'\<^esub>} \<or> rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = carrier (G Mod G')"
       unfolding simple_group_def simple_group_axioms_def by auto
     thus False 
     proof
-      have "G' \<lhd> G" unfolding G'_def by (rule normal_series_snd_to_last)
-      with J(1,4) have GJ:"G' \<lhd> (G\<lparr>carrier := J\<rparr>)" by (metis normal_imp_subgroup normal_restrict_supergroup)
-      from finite J(1) have finJ:"finite J" by (auto simp: normal_imp_subgroup subgroup_finite)
       assume "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = {\<one>\<^bsub>G Mod G'\<^esub>}"
       hence "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = {\<one>\<^bsub>(G\<lparr>carrier := J\<rparr>) Mod G'\<^esub>}" unfolding FactGroup_def by simp
-      find_theorems "carrier (?x Mod ?y) = {?z}"
-      hence "G' = J" using GJ finJ normal.fact_group_trivial_iff
-        unfolding FactGroup_def by fastforce
+      hence "G' = J" using G'J finJ normal.fact_group_trivial_iff unfolding FactGroup_def by fastforce
       with J(2) show False by simp
     next
-      assume "rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = carrier (G Mod G')"
-      hence "J = carrier G" sorry
+      assume facts_eq:"rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G' = carrier (G Mod G')"
+      have "J = carrier G"
+      proof
+        show "J \<subseteq> carrier G" using J(1) normal_imp_subgroup subgroup_imp_subset by force
+      next
+        show "carrier G \<subseteq> J"
+        proof
+          fix x
+          assume x:"x \<in> carrier G"
+          hence "G' #> x \<in> carrier (G Mod G')" unfolding FactGroup_def RCOSETS_def by auto
+          hence "G' #> x \<in> rcosets\<^bsub>G\<lparr>carrier := J\<rparr>\<^esub> G'" using facts_eq by auto
+          then obtain j where j:"j \<in> J" "G' #> x = G' #> j" unfolding RCOSETS_def r_coset_def by force
+          hence "x \<in> G' #> j" using G'G normal_imp_subgroup x repr_independenceD by fastforce
+          then obtain g' where g':"g' \<in> G'" "x = g' \<otimes> j" unfolding r_coset_def by auto
+          hence "g' \<in> J" using G'J normal_imp_subgroup subgroup_imp_subset by force
+          with g'(2) j(1) show  "x \<in> J" using J(1) normal_imp_subgroup subgroup.m_closed by fastforce
+        qed
+      qed
       with J(3) show False by simp
     qed
   }
