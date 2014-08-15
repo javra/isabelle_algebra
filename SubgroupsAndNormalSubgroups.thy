@@ -337,7 +337,8 @@ proof -
   have "{x \<in> carrier G. H #> x \<in> A} \<lhd> G"
   unfolding normal_def normal_axioms_def
   proof auto (*(auto del: equalityI)*)
-    from assms show "subgroup {x \<in> carrier G. H #> x \<in> A} G" by (metis (full_types) factgroup_subgroup_union_subgroup normal_imp_subgroup)
+    from assms show "subgroup {x \<in> carrier G. H #> x \<in> A} G"
+      by (metis (full_types) factgroup_subgroup_union_char factgroup_subgroup_union_subgroup normal_imp_subgroup)
   next
     show "group G" by (rule is_group)
   next
