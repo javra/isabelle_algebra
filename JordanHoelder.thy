@@ -42,6 +42,7 @@ qed
 
 theorem jordan_hoelder_quotients_using_permutations:
   assumes "group G"
+  assumes "finite (carrier G)"
   assumes "composition_series G \<GG>"
   assumes "composition_series G \<HH>"
   shows "length \<GG> = length \<HH>"
@@ -133,7 +134,18 @@ next
         hence "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>} \<or> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))"
           using comp\<GG>.composition_series_snd_simple unfolding simple_group_def simple_group_axioms_def length
           by auto
-        moreover have "\<not> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))" sorry
+        moreover 
+        have "max_normal_subgroup (\<GG> ! (length \<GG> - 2)) G" using length comp\<GG>.snd_to_last_max_normal
+          by (metis "2"(2) one_less_numeral_iff semiring_norm(77))
+        with length have G1max:"max_normal_subgroup (\<GG> ! 1) G" by auto
+        have lminus1:"l - 1 = length \<HH> - 2" unfolding l_def using length\<HH>big by auto
+        hence HnormG:"\<HH> ! (l - 1) \<lhd> G" unfolding l_def using comp\<HH>.normal_series_snd_to_last by auto
+        have "\<HH> ! (l - 1) \<noteq> carrier G" unfolding l_def
+          using "2"(2)unfolding l_def 
+          by (metis One_nat_def lminus1 `length \<HH> \<noteq> 0` `length \<HH> \<noteq> 1` comp\<HH>.snd_to_last_max_normal l_def less_Suc0 max_normal_subgroup.proper nat_neq_iff)
+        with HnormG G1max have "\<not> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))"
+          unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
+          using False by auto
         ultimately have "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>}" by simp
       qed
     qed
