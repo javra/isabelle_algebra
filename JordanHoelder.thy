@@ -147,12 +147,26 @@ next
           unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
           using False by auto
         ultimately have intertriv:"(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>}" by simp
+        find_theorems "?a \<subseteq> ?x <#>\<^bsub>?G\<^esub> ?y"
         have "\<GG> ! 1 \<subseteq> (\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1))"
-          sorry
-        moreover have "\<GG> ! 1 \<noteq> (\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1))" sorry
+          using second_isomorphism_grp.H_contained_in_set_mult
+          unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def
+          using G1max HnormG normal_imp_subgroup
+          unfolding max_normal_subgroup_def by metis
+        moreover have "\<GG> ! 1 \<noteq> (\<GG> ! 1) <#>\<^bsub>G\<^esub> \<HH> ! (l - 1)" 
+        proof -
+          have "\<HH> ! (l - 1) \<noteq> {\<one>\<^bsub>G\<^esub>}" using lminus1 length\<HH>big comp\<HH>.inner_elements_not_triv by fastforce
+          then obtain h where h:"h \<in> \<HH> ! (l - 1)" and "h \<noteq> \<one>\<^bsub>G\<^esub>" using HnormG normal_imp_subgroup subgroup.one_closed by fastforce
+          hence "h \<notin> \<GG> ! 1" using intertriv by auto
+          moreover from h have "\<one>\<^bsub>G\<^esub> \<otimes>\<^bsub>G\<^esub> h \<in> (\<GG> ! 1) <#>\<^bsub>G\<^esub> \<HH> ! (l - 1)"
+            unfolding set_mult_def using G1max unfolding max_normal_subgroup_def using normal_imp_subgroup
+            using subgroup.one_closed by fastforce
+          hence "h \<in> (\<GG> ! 1) <#>\<^bsub>G\<^esub> \<HH> ! (l - 1)" using comp\<GG>.l_one h HnormG normal_imp_subgroup subgroup_imp_subset by force
+          ultimately show ?thesis by metis
+        qed
         ultimately have "(\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1)) = carrier G" using G1max HnormG comp\<GG>.normal_subgroup_setmult
           unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def by metis
-        -- {* Find suitable isomophisms... *}
+        -- {* Find suitable isomophisms to show  G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G Mod (\<GG> ! 1)*}
         then obtain \<phi> where "\<phi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := carrier G\<rparr> Mod (\<GG> ! 1)"
           using G1max HnormG normal_imp_subgroup second_isomorphism_grp.normal_intersection_quotient_isom intertriv
           unfolding max_normal_subgroup_def second_isomorphism_grp_def second_isomorphism_grp_axioms_def
@@ -162,7 +176,9 @@ next
           using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.trivial_factor_iso
           by metis
         hence \<psi>:"\<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>" by auto
-        have "group (G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>})" using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group sorry
+        have "{\<one>\<^bsub>G\<^esub>} \<lhd> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>"
+          using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.triv_normal_subgroup by force
+        hence "group (G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>})" by (rule normal.factorgroup_is_group)
         with \<psi> have "inv_into (carrier (G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>})) \<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>}"
           using group.iso_sym by auto
         with \<phi> obtain \<phi>' where "\<phi>' \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G Mod (\<GG> ! 1)"
