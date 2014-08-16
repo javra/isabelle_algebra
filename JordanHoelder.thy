@@ -171,18 +171,31 @@ next
           using G1max HnormG normal_imp_subgroup second_isomorphism_grp.normal_intersection_quotient_isom intertriv
           unfolding max_normal_subgroup_def second_isomorphism_grp_def second_isomorphism_grp_axioms_def
           by metis
-        hence \<phi>:"\<phi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G Mod (\<GG> ! 1)" by auto
-        obtain \<psi> where "\<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>"
+        hence \<phi>:"\<phi> \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G Mod (\<GG> ! 1)" by auto
+        obtain \<psi> where "\<psi> \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>"
           using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.trivial_factor_iso
           by metis
-        hence \<psi>:"\<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>" by auto
-        have "{\<one>\<^bsub>G\<^esub>} \<lhd> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>"
+        hence \<psi>:"\<psi> \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>" by auto
+        have "{\<one>\<^bsub>G\<^esub>} \<lhd> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>"
           using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.triv_normal_subgroup by force
-        hence "group (G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>})" by (rule normal.factorgroup_is_group)
-        with \<psi> have "inv_into (carrier (G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>})) \<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>}"
+        hence "group (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>})" by (rule normal.factorgroup_is_group)
+        with \<psi> have "inv_into (carrier (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>})) \<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>}"
           using group.iso_sym by auto
-        with \<phi> obtain \<phi>' where "\<phi>' \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G Mod (\<GG> ! 1)"
+        with \<phi> obtain \<phi>' where \<phi>':"\<phi>' \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> \<cong> G Mod (\<GG> ! 1)"
           using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.iso_trans by metis
+        then obtain inv\<phi>' where inv\<phi>':"inv\<phi>' \<in> G Mod (\<GG> ! 1) \<cong> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>"
+          using group.iso_sym HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group by metis
+        have "simple_group (G\<lparr>carrier := \<GG> ! (1 + 1)\<rparr> Mod (\<GG> ! 1))" using length comp\<GG>.simplefact by auto (* this is annoying... *)
+        hence "simple_group (G\<lparr>carrier := \<GG> ! (length \<GG> - 1)\<rparr> Mod (\<GG> ! 1))" using length
+          by (metis add_diff_cancel_left' one_add_one one_plus_numeral semiring_norm(3))
+        hence "simple_group (G Mod (\<GG> ! 1))" using comp\<GG>.notempty last_conv_nth comp\<GG>.last by fastforce
+        hence "simple_group (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>)"
+          using inv\<phi>' simple_group.iso_simple HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group
+          by metis
+        hence "l - 1 = 1" by (metis Nat.add_0_right `length \<HH> \<noteq> 0` add_eq_if comp\<HH>.composition_snd_simple_iff l_def lessI less_imp_diff_less)
+        hence "l = 2" by arith
+        (* Here be Analogiegruende *)
+        obtain \<phi>'' where "\<phi>'' \<in> G Mod (\<HH> ! 1) \<cong> G\<lparr>carrier := \<GG> ! 1\<rparr>" sorry
         
       qed
     qed
