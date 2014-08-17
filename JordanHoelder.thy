@@ -8,6 +8,7 @@ imports
   "CompositionSeries"
   "MaximalNormalSubgroups"
   "Multiset"
+  "GroupIsoClasses"
 begin
 
 locale jordan_hoelder = group
@@ -43,7 +44,8 @@ theorem jordan_hoelder_multisets:
   assumes "finite (carrier G)"
   assumes "composition_series G \<GG>"
   assumes "composition_series G \<HH>"
-  shows "multiset_of (normal_series.quotient_list G \<GG>) = multiset_of (normal_series.quotient_list G \<HH>)"
+  shows "multiset_of (map group.iso_class (normal_series.quotient_list G \<GG>))
+    = multiset_of (map group.iso_class (normal_series.quotient_list G \<HH>))"
 using assms
 proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
   print_cases
@@ -197,9 +199,11 @@ corollary (in jordan_hoelder) jordan_hoelder_size:
   shows "length \<GG> = length \<HH>"
 proof -
   have "length \<GG> = length comp\<GG>.quotient_list + 1" by (metis comp\<GG>.quotient_list_length)
-  also have "\<dots> = size (multiset_of comp\<GG>.quotient_list) + 1" by (metis size_multiset_of)
-  also have "\<dots> = size (multiset_of comp\<HH>.quotient_list) + 1" sorry
-  also have "\<dots> = length comp\<HH>.quotient_list + 1" by (metis size_multiset_of)
+  also have "\<dots> = length (map group.iso_class comp\<GG>.quotient_list) + 1" by (metis length_map)
+  also have "\<dots> = size (multiset_of (map group.iso_class comp\<GG>.quotient_list)) + 1" by (metis size_multiset_of)
+  also have "\<dots> = size (multiset_of (map group.iso_class comp\<HH>.quotient_list)) + 1" sorry
+  also have "\<dots> = length (map group.iso_class comp\<HH>.quotient_list) + 1" by (metis size_multiset_of)
+  also have "\<dots> = length comp\<HH>.quotient_list + 1" by (metis length_map)
   also have "\<dots> = length \<HH>" by (metis comp\<HH>.quotient_list_length)
   finally show ?thesis.
 qed
