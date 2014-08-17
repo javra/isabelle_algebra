@@ -17,7 +17,7 @@ locale jordan_hoelder = group
 
 lemma (in group) setmult_lcos_assoc:
      "\<lbrakk>H \<subseteq> carrier G; K \<subseteq> carrier G; x \<in> carrier G\<rbrakk>
-      \<Longrightarrow> x <# K <#> H = x <# (K <#> H)"
+      \<Longrightarrow> (x <#\<^bsub>G\<^esub> K) <#> H = x <# (K <#> H)"
 by (force simp add: l_coset_def set_mult_def m_assoc)
 
 lemma (in group) normal_subgroup_setmult:
@@ -31,9 +31,9 @@ next
   fix g
   assume g:"g \<in> carrier G"
   have "M <#> N #> g = M <#> (N #> g)" using g M N setmult_rcos_assoc by (metis normal_inv_iff subgroup_imp_subset)
-  also have "\<dots> = M <#> (g <# N)" using N g by (metis normal.coset_eq)
+  also have "\<dots> = M <#> (g <#\<^bsub>G\<^esub> N)" using N g by (metis normal.coset_eq)
   also have "\<dots> = (M #> g) <#> N" using M N g by (metis normal_imp_subgroup rcos_assoc_lcos subgroup_imp_subset)
-  also have "\<dots> = (g <# M) <#> N" using M g by (metis normal.coset_eq)
+  also have "\<dots> = (g <#\<^bsub>G\<^esub> M) <#> N" using M g by (metis normal.coset_eq)
   also have "\<dots> = g <# (M <#> N)" using g M N setmult_lcos_assoc by (metis normal_inv_iff subgroup_imp_subset)
   finally show " M <#> N #> g = g <# (M <#> N)".
 qed
