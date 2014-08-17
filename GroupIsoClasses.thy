@@ -64,24 +64,15 @@ lemma iso_classes_iff:
   assumes "group G"
   assumes "group H"
   shows "(\<exists>\<phi>. \<phi> \<in> G \<cong> H) = (group.iso_class G = group.iso_class H)"
-proof
+proof -
   from assms(1,2) have groups:"group (monoid.truncate G)" "group (monoid.truncate H)"
     unfolding monoid.truncate_def group_def group_axioms_def Units_def monoid_def by auto
-  {
-    assume "\<exists>\<phi>. \<phi> \<in> G \<cong> H"
-    hence "\<exists>\<phi>. \<phi> \<in> (monoid.truncate G) \<cong> (monoid.truncate H)" unfolding iso_def hom_def monoid.truncate_def by auto
-    hence "group_iso_rel (Abs_group (monoid.truncate G)) (Abs_group (monoid.truncate H))"
-      unfolding group_iso_rel_def using groups group.Abs_group_inverse by (metis mem_Collect_eq)
-    thus "group.iso_class G = group.iso_class H" using group.iso_class_def assms group_iso_class.abs_eq_iff by metis
-  }
-  {
-    assume "group.iso_class G = group.iso_class H"
-    hence "group_iso_rel (Abs_group (monoid.truncate G)) (Abs_group (monoid.truncate H))"
-      using group.iso_class_def assms group_iso_class.abs_eq_iff by metis
-    hence "\<exists>\<phi>. \<phi> \<in> (monoid.truncate G) \<cong> (monoid.truncate H)"
-      unfolding group_iso_rel_def using groups group.Abs_group_inverse by (metis mem_Collect_eq)
-    thus "\<exists>\<phi>. \<phi> \<in> G \<cong> H" unfolding monoid.truncate_def iso_def hom_def by auto
-  }
+  have "(\<exists>\<phi>. \<phi> \<in> G \<cong> H) = (\<exists>\<phi>. \<phi> \<in> (monoid.truncate G) \<cong> (monoid.truncate H))"
+    unfolding iso_def hom_def monoid.truncate_def by auto
+  also have "\<dots> = group_iso_rel (Abs_group (monoid.truncate G)) (Abs_group (monoid.truncate H))"
+    unfolding group_iso_rel_def using groups group.Abs_group_inverse by (metis mem_Collect_eq)
+  also have "\<dots> = (group.iso_class G = group.iso_class H)" using group.iso_class_def assms group_iso_class.abs_eq_iff by metis
+  finally show ?thesis.
 qed
 
 end
