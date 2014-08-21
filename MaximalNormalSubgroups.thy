@@ -20,7 +20,7 @@ locale max_normal_subgroup = normal +
 
 text {* Another characterization of maximal normal subgroups: The factor group is simple. *}
 
-theorem (in normal)
+theorem (in normal) max_normal_simple_quotient:
   assumes finite:"finite (carrier G)"
   shows "max_normal_subgroup H G = simple_group (G Mod H)"
 proof

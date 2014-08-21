@@ -602,17 +602,23 @@ lemma remdups_adj_prop_induce:
   shows "\<And> j. j + 1 < length (remdups_adj xs) \<Longrightarrow> A j (j + 1)"
 sorry
 
-lemma remdups_ajd_obtain_adjacency:
+lemma remdups_adj_obtain_adjacency:
   assumes "i + 1 < length (remdups_adj xs)" "length xs > 0"
   obtains j where "j + 1 < length xs"
     "(remdups_adj xs) ! i = xs ! j" "(remdups_adj xs) ! (i + 1) = xs ! (j + 1)"
 using assms apply (induction "xs")
 sorry
 
+lemma remdups_adj_distinction:
+  assumes "i + 1 < length (remdups_adj xs)" "length xs > 0"
+  shows "(remdups_adj xs) ! i \<noteq> (remdups_adj xs) ! (i + 1)"
+sorry
+
 text {* Intersecting each entry of a composition series with a normal subgroup of $G$ and removing
   all adjacent duplicates yields another composition series. *}
 
 lemma (in composition_series) intersect_normal:
+  assumes finite:"finite (carrier G)"
   assumes KG:"K \<lhd> G"
   shows "composition_series (G\<lparr>carrier := K\<rparr>) (remdups_adj (map (\<lambda>H. K \<inter> H) \<GG>))"
 unfolding composition_series_def composition_series_axioms_def normal_series_def normal_series_axioms_def
@@ -652,28 +658,51 @@ next
   with j obtain i where i:"i + 1 < length (map (op \<inter> K) \<GG>)"
     "(remdups_adj (map (op \<inter> K) \<GG>)) ! j = (map (op \<inter> K) \<GG>) ! i"
     "(remdups_adj (map (op \<inter> K) \<GG>)) ! (j + 1) = (map (op \<inter> K) \<GG>) ! (i + 1)"
-    using remdups_ajd_obtain_adjacency by force
+    using remdups_adj_obtain_adjacency by force
   from i(1) have i':"i + 1 < length \<GG>" by (metis length_map)
   hence GiSi:"\<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" by (metis normal)
   hence GiSi':"\<GG> ! i \<subseteq> \<GG> ! (i + 1)" using normal_imp_subgroup subgroup_imp_subset by force
-  from GiSi KG i' normal_series_subgroups have "\<GG> ! (i + 1) \<inter> K \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>"
+  from i' have finGSi:"finite (\<GG> ! (i + 1))" using  normal_series_subgroups finite by (metis subgroup_finite)
+  from GiSi KG i' normal_series_subgroups have GSiKnormGSi:"\<GG> ! (i + 1) \<inter> K \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>"
     using second_isomorphism_grp.normal_subgrp_intersection_normal
     unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def by auto
   with GiSi have "\<GG> ! i \<inter> (\<GG> ! (i + 1) \<inter> K) \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>"
     by (metis group.normal_subgroup_intersect group.subgroup_imp_group i' is_group is_normal_series normal_series.normal_series_subgroups)
   hence "K \<inter> (\<GG> ! i \<inter> \<GG> ! (i + 1)) \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" by (metis inf_commute inf_left_commute)
-  hence "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" using GiSi' by (metis le_iff_inf)
+  hence KGinormGSi:"K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" using GiSi' by (metis le_iff_inf)
   moreover have "K \<inter> \<GG> ! i \<subseteq> K \<inter> \<GG> ! (i + 1)" using GiSi' by auto
   moreover have "group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" using i normal_series_subgroups subgroup_imp_group by auto
-  moreover have "subgroup (K \<inter> \<GG> ! (i + 1)) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)"
-    by (metis `\<GG> ! (i + 1) \<inter> K \<lhd> G \<lparr>carrier := \<GG> ! (i + 1)\<rparr>` inf_sup_aci(1) normal_imp_subgroup)
+  moreover have "subgroup (K \<inter> \<GG> ! (i + 1)) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" by (metis GSiKnormGSi inf_sup_aci(1) normal_imp_subgroup)
   ultimately have "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1), carrier := K \<inter> \<GG> ! (i + 1)\<rparr>"
     using group.normal_restrict_supergroup by force
   thus "remdups_adj (map (op \<inter> K) \<GG>) ! j \<lhd> G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr>"
     using i by auto
-  show "simple_group
-          (G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr> Mod
-           remdups_adj (map (op \<inter> K) \<GG>) ! j)" sorry
-sorry
+  from simplefact have Gisimple:"simple_group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)" using i' by simp
+  hence Gimax:"max_normal_subgroup (\<GG> ! i) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)"
+    using normal.max_normal_simple_quotient GiSi finGSi by force
+  from GSiKnormGSi GiSi have "\<GG> ! i <#> K \<inter> \<GG> ! (i + 1) \<lhd> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)"
+    sorry
+  moreover have "\<GG> ! i \<subseteq> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1)"
+    using second_isomorphism_grp.H_contained_in_set_mult
+    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def sorry
+  ultimately have "\<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! i \<or> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! (i + 1)"
+    using Gimax unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
+    by auto
+  thus "simple_group (G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
+  proof auto
+    assume "\<GG> ! i <#> K \<inter> \<GG> ! Suc i = \<GG> ! i"
+    hence "K \<inter> \<GG> ! i = K \<inter> \<GG> ! (i + 1)"sorry
+    hence "(remdups_adj (map (op \<inter> K) \<GG>)) ! j = (remdups_adj (map (op \<inter> K) \<GG>)) ! (j + 1)" using i by auto
+    with j have False using remdups_adj_distinction by force
+    thus "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"..
+  next
+    assume "\<GG> ! i <#> K \<inter> \<GG> ! Suc i = \<GG> ! Suc i"
+    obtain \<phi> where "\<phi> \<in> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i) \<cong> (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
+      sorry
+    moreover have "group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)" sorry
+    ultimately show "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
+      using simple_group.iso_simple i' simplefact by auto
+  qed
+qed
 
 end
