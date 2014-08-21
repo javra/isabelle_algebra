@@ -594,4 +594,86 @@ next
   }
 qed
 
+text {* For the next lemma we ne an induction theorem which relies on the fact that removing all adjacent
+  duplicates from a list creates no new adjacencies. *}
+
+lemma remdups_adj_prop_induce:
+  assumes "\<And> i. i + 1 < length xs \<Longrightarrow> A i (i + 1)"
+  shows "\<And> j. j + 1 < length (remdups_adj xs) \<Longrightarrow> A j (j + 1)"
+sorry
+
+lemma remdups_ajd_obtain_adjacency:
+  assumes "i + 1 < length (remdups_adj xs)" "length xs > 0"
+  obtains j where "j + 1 < length xs"
+    "(remdups_adj xs) ! i = xs ! j" "(remdups_adj xs) ! (i + 1) = xs ! (j + 1)"
+using assms apply (induction "xs")
+sorry
+
+text {* Intersecting each entry of a composition series with a normal subgroup of $G$ and removing
+  all adjacent duplicates yields another composition series. *}
+
+lemma (in composition_series) intersect_normal:
+  assumes KG:"K \<lhd> G"
+  shows "composition_series (G\<lparr>carrier := K\<rparr>) (remdups_adj (map (\<lambda>H. K \<inter> H) \<GG>))"
+unfolding composition_series_def composition_series_axioms_def normal_series_def normal_series_axioms_def
+apply (auto simp only: conjI del: equalityI)
+proof -
+  show "group (G\<lparr>carrier := K\<rparr>)" using KG normal_imp_subgroup subgroup_imp_group by auto
+next
+  assume "remdups_adj (map (op \<inter> K) \<GG>) = []"
+  hence "map (op \<inter> K) \<GG> = []" by (metis remdups_adj_Nil_iff)
+  hence "\<GG> = []" by (metis Nil_is_map_conv)
+  with notempty show False..
+next
+  have "\<GG> = {\<one>} # tl \<GG>" using notempty hd by (metis hd.simps neq_Nil_conv tl.simps(2))
+  hence "map (op \<inter> K) \<GG> = map (op \<inter> K) ({\<one>} # tl \<GG>)" by simp
+  hence "map (op \<inter> K) \<GG> = (K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>))" by simp
+  hence "remdups_adj (map (op \<inter> K) \<GG>) = remdups_adj ((K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>)))" by simp
+  also have "\<dots> = (K \<inter> {\<one>}) # tl (remdups_adj ((K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>))))" by simp
+  finally have "hd (remdups_adj (map (op \<inter> K) \<GG>)) = K \<inter> {\<one>}" using hd.simps by metis
+  thus "hd (remdups_adj (map (op \<inter> K) \<GG>)) = {\<one>\<^bsub>G\<lparr>carrier := K\<rparr>\<^esub>}" 
+    using KG normal_imp_subgroup subgroup.one_closed by force
+next
+  have "rev \<GG> = (carrier G) # tl (rev \<GG>)" by (metis hd.simps last last_rev neq_Nil_conv notempty rev_is_Nil_conv rev_rev_ident tl.simps(2))
+  hence "rev (map (op \<inter> K) \<GG>) = map (op \<inter> K) ((carrier G) # tl (rev \<GG>))" by (metis rev_map)
+  hence rev:"rev (map (op \<inter> K) \<GG>) = (K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>)))" by simp
+  have "last (remdups_adj (map (op \<inter> K) \<GG>)) = hd (rev (remdups_adj (map (op \<inter> K) \<GG>)))"
+    by (metis hd_rev map_is_Nil_conv notempty remdups_adj_Nil_iff)
+  also have "\<dots> = hd (remdups_adj (rev (map (op \<inter> K) \<GG>)))" by (metis remdups_adj_rev)
+  also have "\<dots> = hd (remdups_adj ((K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>)))))" by (metis rev)
+  also have "\<dots> = hd ((K \<inter> (carrier G)) # (remdups_adj ((K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>))))))" by (metis hd.simps remdups_adj_Cons_alt)
+  also have "\<dots> = K \<inter> (carrier G)" by simp
+  also have "\<dots> = K" using KG normal_imp_subgroup subgroup_imp_subset by force
+  finally show "last (remdups_adj (map (op \<inter> K) \<GG>)) = carrier (G\<lparr>carrier := K\<rparr>)" by auto
+next
+  fix j
+  assume j:"j + 1 < length (remdups_adj (map (op \<inter> K) \<GG>))"
+  have "(map (op \<inter> K) \<GG>) \<noteq> []" using notempty by (metis Nil_is_map_conv)
+  with j obtain i where i:"i + 1 < length (map (op \<inter> K) \<GG>)"
+    "(remdups_adj (map (op \<inter> K) \<GG>)) ! j = (map (op \<inter> K) \<GG>) ! i"
+    "(remdups_adj (map (op \<inter> K) \<GG>)) ! (j + 1) = (map (op \<inter> K) \<GG>) ! (i + 1)"
+    using remdups_ajd_obtain_adjacency by force
+  from i(1) have i':"i + 1 < length \<GG>" by (metis length_map)
+  hence GiSi:"\<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" by (metis normal)
+  hence GiSi':"\<GG> ! i \<subseteq> \<GG> ! (i + 1)" using normal_imp_subgroup subgroup_imp_subset by force
+  from GiSi KG i' normal_series_subgroups have "\<GG> ! (i + 1) \<inter> K \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>"
+    using second_isomorphism_grp.normal_subgrp_intersection_normal
+    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def by auto
+  with GiSi have "\<GG> ! i \<inter> (\<GG> ! (i + 1) \<inter> K) \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>"
+    by (metis group.normal_subgroup_intersect group.subgroup_imp_group i' is_group is_normal_series normal_series.normal_series_subgroups)
+  hence "K \<inter> (\<GG> ! i \<inter> \<GG> ! (i + 1)) \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" by (metis inf_commute inf_left_commute)
+  hence "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" using GiSi' by (metis le_iff_inf)
+  moreover have "K \<inter> \<GG> ! i \<subseteq> K \<inter> \<GG> ! (i + 1)" using GiSi' by auto
+  moreover have "group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" using i normal_series_subgroups subgroup_imp_group by auto
+  moreover have "subgroup (K \<inter> \<GG> ! (i + 1)) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)"
+    by (metis `\<GG> ! (i + 1) \<inter> K \<lhd> G \<lparr>carrier := \<GG> ! (i + 1)\<rparr>` inf_sup_aci(1) normal_imp_subgroup)
+  ultimately have "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1), carrier := K \<inter> \<GG> ! (i + 1)\<rparr>"
+    using group.normal_restrict_supergroup by force
+  thus "remdups_adj (map (op \<inter> K) \<GG>) ! j \<lhd> G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr>"
+    using i by auto
+  show "simple_group
+          (G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr> Mod
+           remdups_adj (map (op \<inter> K) \<GG>) ! j)" sorry
+sorry
+
 end
