@@ -7,6 +7,7 @@ theory SubgroupsAndNormalSubgroups
 imports
   "Coset"
   "SndSylow"
+  "SndIsomorphismGrp"
 begin
 
 section {* Preliminary lemmas *}
@@ -209,6 +210,36 @@ lemma (in group) normal_subgroup_intersect:
   assumes "M \<lhd> G" and "N \<lhd> G"
   shows "M \<inter> N \<lhd> G"
 using assms subgroup_intersect is_group normal_inv_iff by simp
+
+text {* The set product of two normal subgroups is a normal subgroup. *}
+
+lemma (in group) setmult_lcos_assoc:
+     "\<lbrakk>H \<subseteq> carrier G; K \<subseteq> carrier G; x \<in> carrier G\<rbrakk>
+      \<Longrightarrow> (x <# H) <#> K = x <# (H <#> K)"
+by (force simp add: l_coset_def set_mult_def m_assoc)
+
+lemma (in group) normal_subgroup_set_mult_closed:
+  assumes "M \<lhd> G" and "N \<lhd> G"
+  shows "M <#> N \<lhd> G"
+proof (rule normalI)
+  from assms show "subgroup (M <#> N) G"
+    using second_isomorphism_grp.normal_set_mult_subgroup normal_imp_subgroup
+    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def by force
+next
+  show "\<forall>x\<in>carrier G. M <#> N #> x = x <# (M <#> N)"
+  proof
+    fix x
+    assume x:"x \<in> carrier G"
+    have "M <#> N #> x = M <#> (N #> x)" by (metis assms(1,2) normal_inv_iff setmult_rcos_assoc subgroup_imp_subset x)
+    also have "\<dots> = M <#> (x <# N)" by (metis assms(2) normal.coset_eq x)
+    also have "\<dots> = (M #> x) <#> N" by (metis assms(1,2) normal_imp_subgroup rcos_assoc_lcos subgroup_imp_subset x)
+    also have "\<dots> = (x <# M) <#> N" by (metis assms(1) normal.coset_eq x)
+    also have "\<dots> = x <# (M <#> N)" by (metis assms(1,2) normal_imp_subgroup setmult_lcos_assoc subgroup_imp_subset x)
+    finally show "M <#> N #> x = x <# (M <#> N)".
+  qed
+qed
+
+find_theorems "subgroup (?x <#>\<^bsub>?g\<^esub> ?y) ?g"
 
 text {* A subgroup relation survives factoring by a normal subgroup. *}
 

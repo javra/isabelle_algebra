@@ -671,8 +671,8 @@ next
   hence "K \<inter> (\<GG> ! i \<inter> \<GG> ! (i + 1)) \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" by (metis inf_commute inf_left_commute)
   hence KGinormGSi:"K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" using GiSi' by (metis le_iff_inf)
   moreover have "K \<inter> \<GG> ! i \<subseteq> K \<inter> \<GG> ! (i + 1)" using GiSi' by auto
-  moreover have "group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" using i normal_series_subgroups subgroup_imp_group by auto
-  moreover have "subgroup (K \<inter> \<GG> ! (i + 1)) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" by (metis GSiKnormGSi inf_sup_aci(1) normal_imp_subgroup)
+  moreover have groupGSi:"group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" using i normal_series_subgroups subgroup_imp_group by auto
+  moreover have subKGSiGSi:"subgroup (K \<inter> \<GG> ! (i + 1)) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" by (metis GSiKnormGSi inf_sup_aci(1) normal_imp_subgroup)
   ultimately have "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1), carrier := K \<inter> \<GG> ! (i + 1)\<rparr>"
     using group.normal_restrict_supergroup by force
   thus "remdups_adj (map (op \<inter> K) \<GG>) ! j \<lhd> G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr>"
@@ -680,11 +680,15 @@ next
   from simplefact have Gisimple:"simple_group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)" using i' by simp
   hence Gimax:"max_normal_subgroup (\<GG> ! i) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)"
     using normal.max_normal_simple_quotient GiSi finGSi by force
-  from GSiKnormGSi GiSi have "\<GG> ! i <#> K \<inter> \<GG> ! (i + 1) \<lhd> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)"
-    sorry
-  moreover have "\<GG> ! i \<subseteq> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1)"
+  from GSiKnormGSi GiSi have "\<GG> ! i <#>\<^bsub>G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>\<^esub> \<GG> ! (i + 1) \<inter> K \<lhd> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)"
+    using groupGSi group.normal_subgroup_set_mult_closed by simp
+  hence "\<GG> ! i <#> \<GG> ! (i + 1) \<inter> K \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" unfolding set_mult_def by auto
+  hence "\<GG> ! i <#> K \<inter> \<GG> ! (i + 1) \<lhd> G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>" using inf_commute by metis
+  moreover have "\<GG> ! i \<subseteq> \<GG> ! i <#>\<^bsub>G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>\<^esub> K \<inter> \<GG> ! (i + 1)"
     using second_isomorphism_grp.H_contained_in_set_mult
-    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def sorry
+    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def
+    using subKGSiGSi GiSi normal_imp_subgroup by fastforce
+  hence "\<GG> ! i \<subseteq> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1)" unfolding set_mult_def by auto
   ultimately have "\<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! i \<or> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! (i + 1)"
     using Gimax unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
     by auto
