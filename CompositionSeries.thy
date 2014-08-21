@@ -610,9 +610,50 @@ using assms apply (induction "xs")
 sorry
 
 lemma remdups_adj_distinction:
-  assumes "i + 1 < length (remdups_adj xs)" "length xs > 0"
-  shows "(remdups_adj xs) ! i \<noteq> (remdups_adj xs) ! (i + 1)"
-sorry
+  assumes "length xs > 0"
+  shows "\<And>i. i + 1 < length (remdups_adj xs) \<Longrightarrow> (remdups_adj xs) ! i \<noteq> (remdups_adj xs) ! (i + 1)"
+using assms proof (induction xs)
+  case Nil
+  hence "False" by simp
+  thus "remdups_adj [] ! i \<noteq> remdups_adj [] ! (i + 1)"..
+next
+  case (Cons x xs)
+  hence "xs \<noteq> []" by (metis Divides.div_less Suc_eq_plus1 Zero_not_Suc div_eq_dividend_iff list.size(3,4) plus_nat.add_0 remdups_adj.simps(2))
+  then obtain y xs' where xs:"xs = y # xs'" by (metis list.exhaust)
+  from `xs \<noteq> []` have lenxs:"length xs > 0" by simp
+  from xs have rem:"remdups_adj (x # xs) = (if x = y then remdups_adj (y # xs') else x # remdups_adj (y # xs'))" using remdups_adj.simps(3) by auto
+  show "remdups_adj (x # xs) ! i \<noteq> remdups_adj (x # xs) ! (i + 1)"
+  proof (cases "x = y")
+    case True 
+    with rem xs have "remdups_adj (x # xs) = remdups_adj xs" by auto
+    moreover from lenxs have "remdups_adj xs ! i \<noteq> remdups_adj xs ! (i + 1)" by (metis Cons.IH Cons.prems(1) calculation)
+    ultimately show ?thesis by auto
+  next
+    case False
+    with rem xs have rem2:"remdups_adj (x # xs) = x # remdups_adj xs" by auto
+    show ?thesis
+    proof (cases i)
+      case 0
+      with rem2 have isx:"remdups_adj (x # xs) ! i = x" by auto
+      from 0 rem2 have "remdups_adj (x # xs) ! (i + 1) = remdups_adj xs ! 0"
+        by (metis One_nat_def Suc_eq_plus1 diff_Suc_less less_Suc0 nth_Cons_pos)
+      also have "\<dots> = remdups_adj (y # xs') ! 0" using xs by auto
+      also have "\<dots> = (y # remdups_adj (y # xs')) ! 0" by (metis nth_Cons' remdups_adj_Cons_alt)
+      also have "\<dots> = y" by simp
+      finally have "remdups_adj (x # xs) ! (i + 1) = y".
+      with False isx show "remdups_adj (x # xs) ! i \<noteq> remdups_adj (x # xs) ! (i + 1)" by auto
+    next
+      case (Suc j)
+      with rem2 have "remdups_adj (x # xs) ! i = (remdups_adj xs) ! j" by auto
+      from Cons(2) `i = Suc j` have "j + 1 < length (remdups_adj (x # xs)) - 1" by auto
+      also have "\<dots> \<le> length (remdups_adj xs) + 1 - 1" by (metis One_nat_def le_refl list.size(4) rem2)
+      also have "\<dots> = length (remdups_adj xs)" by simp
+      finally have "j + 1 < length (remdups_adj xs)".
+      with Cons.IH lenxs have "(remdups_adj xs) ! j \<noteq> (remdups_adj xs) ! (j + 1)" by auto
+      with rem2 `i = Suc j` show "remdups_adj (x # xs) ! i \<noteq> remdups_adj (x # xs) ! (i + 1)" by (metis Suc_eq_plus1 nth_Cons_Suc)
+    qed
+  qed
+qed
 
 text {* Intersecting each entry of a composition series with a normal subgroup of $G$ and removing
   all adjacent duplicates yields another composition series. *}
@@ -629,7 +670,7 @@ next
   assume "remdups_adj (map (op \<inter> K) \<GG>) = []"
   hence "map (op \<inter> K) \<GG> = []" by (metis remdups_adj_Nil_iff)
   hence "\<GG> = []" by (metis Nil_is_map_conv)
-  with notempty show False..
+  with notempty show False..sorry
 next
   have "\<GG> = {\<one>} # tl \<GG>" using notempty hd by (metis hd.simps neq_Nil_conv tl.simps(2))
   hence "map (op \<inter> K) \<GG> = map (op \<inter> K) ({\<one>} # tl \<GG>)" by simp
