@@ -32,6 +32,12 @@ proof -
   from one_closed finite show ?thesis unfolding order_def by (metis card_gt_0_iff subgroup_nonempty subgroup_self)
 qed
 
+lemma iso_order_closed:
+  assumes "\<phi> \<in> G \<cong> H"
+  shows "order G = order H"
+using assms
+unfolding order_def iso_def by (metis (no_types) bij_betw_same_card mem_Collect_eq)
+
 section {* More Facts about Subgroups *}
 
 lemma (in subgroup) subgroup_of_restricted_group:

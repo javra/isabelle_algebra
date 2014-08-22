@@ -670,7 +670,7 @@ next
   assume "remdups_adj (map (op \<inter> K) \<GG>) = []"
   hence "map (op \<inter> K) \<GG> = []" by (metis remdups_adj_Nil_iff)
   hence "\<GG> = []" by (metis Nil_is_map_conv)
-  with notempty show False..sorry
+  with notempty show False..
 next
   have "\<GG> = {\<one>} # tl \<GG>" using notempty hd by (metis hd.simps neq_Nil_conv tl.simps(2))
   hence "map (op \<inter> K) \<GG> = map (op \<inter> K) ({\<one>} # tl \<GG>)" by simp
@@ -695,7 +695,7 @@ next
 next
   fix j
   assume j:"j + 1 < length (remdups_adj (map (op \<inter> K) \<GG>))"
-  have "(map (op \<inter> K) \<GG>) \<noteq> []" using notempty by (metis Nil_is_map_conv)
+  have KGnotempty:"(map (op \<inter> K) \<GG>) \<noteq> []" using notempty by (metis Nil_is_map_conv)
   with j obtain i where i:"i + 1 < length (map (op \<inter> K) \<GG>)"
     "(remdups_adj (map (op \<inter> K) \<GG>)) ! j = (map (op \<inter> K) \<GG>) ! i"
     "(remdups_adj (map (op \<inter> K) \<GG>)) ! (j + 1) = (map (op \<inter> K) \<GG>) ! (i + 1)"
@@ -714,7 +714,7 @@ next
   moreover have "K \<inter> \<GG> ! i \<subseteq> K \<inter> \<GG> ! (i + 1)" using GiSi' by auto
   moreover have groupGSi:"group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" using i normal_series_subgroups subgroup_imp_group by auto
   moreover have subKGSiGSi:"subgroup (K \<inter> \<GG> ! (i + 1)) (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>)" by (metis GSiKnormGSi inf_sup_aci(1) normal_imp_subgroup)
-  ultimately have "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1), carrier := K \<inter> \<GG> ! (i + 1)\<rparr>"
+  ultimately have fstgoal:"K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := \<GG> ! (i + 1), carrier := K \<inter> \<GG> ! (i + 1)\<rparr>"
     using group.normal_restrict_supergroup by force
   thus "remdups_adj (map (op \<inter> K) \<GG>) ! j \<lhd> G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr>"
     using i by auto
@@ -730,22 +730,50 @@ next
     unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def
     using subKGSiGSi GiSi normal_imp_subgroup by fastforce
   hence "\<GG> ! i \<subseteq> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1)" unfolding set_mult_def by auto
-  ultimately have "\<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! i \<or> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! (i + 1)"
+  ultimately have KGdisj:"\<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! i \<or> \<GG> ! i <#> K \<inter> \<GG> ! (i + 1) = \<GG> ! (i + 1)"
     using Gimax unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
     by auto
-  thus "simple_group (G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
+  obtain \<phi> where "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (\<GG> ! i \<inter> (K \<inter> \<GG> ! (i + 1))))
+    \<cong> (G\<lparr>carrier := \<GG> ! i <#>\<^bsub>G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>\<^esub> K \<inter> \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
+    using second_isomorphism_grp.normal_intersection_quotient_isom
+    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def
+    using GiSi subKGSiGSi normal_imp_subgroup  by fastforce
+  hence "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! (i + 1) \<inter> \<GG> ! i))
+    \<cong> (G\<lparr>carrier := \<GG> ! i <#>\<^bsub>G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>\<^esub> K \<inter> \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)" by (metis inf_commute)
+  hence "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> (\<GG> ! (i + 1) \<inter> \<GG> ! i)))
+    \<cong> (G\<lparr>carrier := \<GG> ! i <#>\<^bsub>G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>\<^esub> K \<inter> \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)" by (metis Int_assoc)
+  hence "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i))
+    \<cong> (G\<lparr>carrier := \<GG> ! i <#>\<^bsub>G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>\<^esub> K \<inter> \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)" by (metis GiSi' Int_absorb2 Int_commute)
+  hence \<phi>:"\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := \<GG> ! i <#> K \<inter> \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
+    unfolding set_mult_def by auto
+  from KGdisj show "simple_group (G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
   proof auto
+    have groupGi:"group (G\<lparr>carrier := \<GG> ! i\<rparr>)" using i' normal_series_subgroups subgroup_imp_group by auto
     assume "\<GG> ! i <#> K \<inter> \<GG> ! Suc i = \<GG> ! i"
-    hence "K \<inter> \<GG> ! i = K \<inter> \<GG> ! (i + 1)"sorry
+    with \<phi> have "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := \<GG> ! i\<rparr> Mod \<GG> ! i)" by auto
+    moreover obtain \<psi> where "\<psi> \<in> (G\<lparr>carrier := \<GG> ! i\<rparr> Mod (carrier (G\<lparr>carrier := \<GG> ! i\<rparr>))) \<cong> (G\<lparr>carrier := {\<one>\<^bsub>G\<lparr>carrier := \<GG> ! i\<rparr>\<^esub>}\<rparr>)"
+      using group.self_factor_iso groupGi by force
+    moreover from fstgoal have KGsiKGigroup:"group (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i))"
+       using normal.factorgroup_is_group by auto
+    ultimately obtain \<pi> where "\<pi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := {\<one>}\<rparr>)"
+      using group.iso_trans by fastforce
+    hence "order (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) = order (G\<lparr>carrier := {\<one>}\<rparr>)" by (metis iso_order_closed)
+    hence "order (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) = 1" unfolding order_def by auto
+    hence "carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) = {\<one>\<^bsub>G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)\<^esub>}"
+      using group.order_one_triv_iff KGsiKGigroup by auto
+    moreover from fstgoal have "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>" by auto
+    moreover from finGSi have "finite (carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>))" by auto
+    ultimately have "K \<inter> \<GG> ! i = carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>)"
+      using normal.fact_group_trivial_iff[of "K \<inter> \<GG> ! i" "G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>"] by auto
     hence "(remdups_adj (map (op \<inter> K) \<GG>)) ! j = (remdups_adj (map (op \<inter> K) \<GG>)) ! (j + 1)" using i by auto
-    with j have False using remdups_adj_distinction by force
+    with j have False using remdups_adj_distinction KGnotempty by (metis length_greater_0_conv)
     thus "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"..
   next
     assume "\<GG> ! i <#> K \<inter> \<GG> ! Suc i = \<GG> ! Suc i"
-    obtain \<phi> where "\<phi> \<in> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i) \<cong> (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
-      sorry
-    moreover have "group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)" sorry
-    ultimately show "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
+    (*moreover with \<phi> have "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
+      by auto
+    moreover*) have "group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)" sorry
+    show "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
       using simple_group.iso_simple i' simplefact by auto
   qed
 qed
