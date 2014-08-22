@@ -594,13 +594,7 @@ next
   }
 qed
 
-text {* For the next lemma we ne an induction theorem which relies on the fact that removing all adjacent
-  duplicates from a list creates no new adjacencies. *}
-
-lemma remdups_adj_prop_induce:
-  assumes "\<And> i. i + 1 < length xs \<Longrightarrow> A i (i + 1)"
-  shows "\<And> j. j + 1 < length (remdups_adj xs) \<Longrightarrow> A j (j + 1)"
-sorry
+text {* For the next lemma we need a few facts about remdups_adj. *}
 
 lemma remdups_adj_obtain_adjacency:
   assumes "i + 1 < length (remdups_adj xs)" "length xs > 0"
@@ -746,6 +740,7 @@ next
     \<cong> (G\<lparr>carrier := \<GG> ! i <#>\<^bsub>G\<lparr>carrier := \<GG> ! (i + 1)\<rparr>\<^esub> K \<inter> \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)" by (metis GiSi' Int_absorb2 Int_commute)
   hence \<phi>:"\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := \<GG> ! i <#> K \<inter> \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
     unfolding set_mult_def by auto
+  from fstgoal have KGsiKGigroup:"group (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i))" using normal.factorgroup_is_group by auto
   from KGdisj show "simple_group (G\<lparr>carrier := K, carrier := remdups_adj (map (op \<inter> K) \<GG>) ! (j + 1)\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
   proof auto
     have groupGi:"group (G\<lparr>carrier := \<GG> ! i\<rparr>)" using i' normal_series_subgroups subgroup_imp_group by auto
@@ -753,28 +748,25 @@ next
     with \<phi> have "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := \<GG> ! i\<rparr> Mod \<GG> ! i)" by auto
     moreover obtain \<psi> where "\<psi> \<in> (G\<lparr>carrier := \<GG> ! i\<rparr> Mod (carrier (G\<lparr>carrier := \<GG> ! i\<rparr>))) \<cong> (G\<lparr>carrier := {\<one>\<^bsub>G\<lparr>carrier := \<GG> ! i\<rparr>\<^esub>}\<rparr>)"
       using group.self_factor_iso groupGi by force
-    moreover from fstgoal have KGsiKGigroup:"group (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i))"
-       using normal.factorgroup_is_group by auto
     ultimately obtain \<pi> where "\<pi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := {\<one>}\<rparr>)"
-      using group.iso_trans by fastforce
+      using KGsiKGigroup group.iso_trans by fastforce
     hence "order (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) = order (G\<lparr>carrier := {\<one>}\<rparr>)" by (metis iso_order_closed)
     hence "order (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) = 1" unfolding order_def by auto
     hence "carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) = {\<one>\<^bsub>G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)\<^esub>}"
       using group.order_one_triv_iff KGsiKGigroup by auto
     moreover from fstgoal have "K \<inter> \<GG> ! i \<lhd> G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>" by auto
     moreover from finGSi have "finite (carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>))" by auto
-    ultimately have "K \<inter> \<GG> ! i = carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>)"
-      using normal.fact_group_trivial_iff[of "K \<inter> \<GG> ! i" "G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>"] by auto
+    ultimately have "K \<inter> \<GG> ! i = carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>)" by (metis normal.fact_group_trivial_iff)
     hence "(remdups_adj (map (op \<inter> K) \<GG>)) ! j = (remdups_adj (map (op \<inter> K) \<GG>)) ! (j + 1)" using i by auto
     with j have False using remdups_adj_distinction KGnotempty by (metis length_greater_0_conv)
     thus "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"..
   next
     assume "\<GG> ! i <#> K \<inter> \<GG> ! Suc i = \<GG> ! Suc i"
-    (*moreover with \<phi> have "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
-      by auto
-    moreover*) have "group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)" sorry
-    show "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"
-      using simple_group.iso_simple i' simplefact by auto
+    moreover with \<phi> have "\<phi> \<in> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i)) \<cong> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"by auto
+    then obtain \<phi>' where "\<phi>' \<in> (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i) \<cong> (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i))"
+      using KGsiKGigroup group.iso_sym by auto
+    with Gisimple KGsiKGigroup have "simple_group (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i))" by (metis simple_group.iso_simple)
+    with i show "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)" by auto
   qed
 qed
 
