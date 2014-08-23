@@ -600,8 +600,77 @@ lemma remdups_adj_obtain_adjacency:
   assumes "i + 1 < length (remdups_adj xs)" "length xs > 0"
   obtains j where "j + 1 < length xs"
     "(remdups_adj xs) ! i = xs ! j" "(remdups_adj xs) ! (i + 1) = xs ! (j + 1)"
-using assms apply (induction "xs")
-sorry
+using assms proof (induction xs arbitrary: i thesis)
+  case Nil
+  hence False by (metis length_greater_0_conv)
+  thus thesis..
+next
+  case (Cons x xs)
+  hence "xs \<noteq> []" using Divides.div_less Suc_eq_plus1 Zero_not_Suc div_eq_dividend_iff list.size(3,4) plus_nat.add_0 remdups_adj.simps(2) by metis
+  then obtain y xs' where xs:"xs = y # xs'" by (metis list.exhaust)
+  from `xs \<noteq> []` have lenxs:"length xs > 0" by simp
+  from xs have rem:"remdups_adj (x # xs) = (if x = y then remdups_adj (y # xs') else x # remdups_adj (y # xs'))" using remdups_adj.simps(3) by auto
+  show thesis
+  proof (cases "x = y")
+    case True
+    with rem xs have rem2:"remdups_adj (x # xs) = remdups_adj xs" by auto
+    with Cons(3) have "i + 1 < length (remdups_adj xs)" by simp
+    with Cons.IH lenxs obtain k where j:"k + 1 < length xs" "remdups_adj xs ! i = xs ! k"
+        "remdups_adj xs ! (i + 1) = xs ! (k + 1)" by auto
+    thus thesis using Cons(2) rem2 by auto
+  next
+    case False
+    with rem xs have rem2:"remdups_adj (x # xs) = x # remdups_adj xs" by auto
+    show thesis
+    proof (cases i)
+      case 0
+      have "0 + 1 < length (x # xs)" using lenxs by auto
+      moreover have "remdups_adj (x # xs) ! i = (x # xs) ! 0"
+      proof -
+        have "remdups_adj (x # xs) ! i = (x # remdups_adj (y # xs')) ! 0" using xs rem2 0 by simp
+        also have "\<dots> = x" by simp
+        also have "\<dots> = (x # xs) ! 0" by simp
+        finally show ?thesis.
+      qed
+      moreover have "remdups_adj (x # xs) ! (i + 1) = (x # xs) ! (0 + 1)"
+      proof -
+        have "remdups_adj (x # xs) ! (i + 1) = (x # remdups_adj (y # xs')) ! 1" using xs rem2 0 by simp
+        also have "\<dots> = remdups_adj (y # xs') ! 0" by simp
+        also have "\<dots> = (y # (remdups (y # xs'))) ! 0" by (metis nth_Cons' remdups_adj_Cons_alt)
+        also have "\<dots> = y" by simp
+        also have "\<dots> = (x # xs) ! (0 + 1)" unfolding xs by simp
+        finally show ?thesis.
+      qed
+      ultimately show thesis by (rule Cons.prems(1))
+    next
+      case (Suc k)
+      with Cons(3) have "k + 1 < length (remdups_adj (x # xs)) - 1" by auto
+      also have "\<dots> \<le> length (remdups_adj xs) + 1 - 1" by (metis One_nat_def le_refl list.size(4) rem2)
+      also have "\<dots> = length (remdups_adj xs)" by simp
+      finally have "k + 1 < length (remdups_adj xs)".
+      with Cons.IH lenxs obtain j where j:"j + 1 < length xs" "remdups_adj xs ! k = xs ! j"
+        "remdups_adj xs ! (k + 1) = xs ! (j + 1)" by auto
+      from j(1) have "Suc j + 1 < length (x # xs)" by simp
+      moreover have "remdups_adj (x # xs) ! i = (x # xs) ! (Suc j)"
+      proof -
+        have "remdups_adj (x # xs) ! i = (x # remdups_adj xs) ! i" using rem2 by simp
+        also have "\<dots> = (remdups_adj xs) ! k" using Suc by simp
+        also have "\<dots> = xs ! j" using j(2) .
+        also have "\<dots> = (x # xs) ! (Suc j)" by simp
+        finally show ?thesis .
+      qed
+      moreover have "remdups_adj (x # xs) ! (i + 1) = (x # xs) ! (Suc j + 1)"
+      proof -
+        have "remdups_adj (x # xs) ! (i + 1) = (x # remdups_adj xs) ! (i + 1)" using rem2 by simp
+        also have "\<dots> = (remdups_adj xs) ! (k + 1)" using Suc by simp
+        also have "\<dots> = xs ! (j + 1)" using j(3).
+        also have "\<dots> = (x # xs) ! (Suc j + 1)" by simp
+        finally show ?thesis.
+      qed
+      ultimately show thesis by (rule Cons.prems(1))
+    qed
+  qed
+qed
 
 lemma remdups_adj_distinction:
   assumes "length xs > 0"
