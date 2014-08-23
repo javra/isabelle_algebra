@@ -95,8 +95,6 @@ locale normal_series = group +
 
 lemma (in normal_series) is_normal_series: "normal_series G \<GG>" by (rule normal_series_axioms)
 
-find_theorems "?x = []" "length ?x = 0"
-
 text {* For every group there is a "trivial" normal series consisting
 only of the group itself and its trivial subgroup. *}
 
@@ -388,8 +386,7 @@ next
   proof (rule ccontr)
     assume "\<not> 1 < length \<GG>"
     hence "length \<GG> = 1" by (metis nat_add_commute nat_less_cases not_add_less1 quotient_list_length) 
-    hence "hd \<GG> = last \<GG>" sorry
-    hence "carrier G = {\<one>}" using hd last by simp
+    hence "carrier G = {\<one>}" using hd last by (metis composition_series_length_one composition_series_triv_group)
     hence "order G = 1" unfolding order_def by auto
     with simple show "False" unfolding simple_group_def simple_group_axioms_def by auto
   qed
