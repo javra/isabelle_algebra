@@ -256,15 +256,15 @@ qed
 
 text {* The following defines the list of all quotient groups of the normal_series: *}
 
-definition (in normal_series) quotient_list
-  where "quotient_list = map (\<lambda>i. G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i) [0..<((length \<GG>) - 1)]"
+definition (in normal_series) quotients
+  where "quotients = map (\<lambda>i. G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i) [0..<((length \<GG>) - 1)]"
 
 text {* The list of quotient groups has one less entry than the series itself: *}
 
-lemma (in normal_series) quotient_list_length:
-  shows "length quotient_list + 1 = length \<GG>"
+lemma (in normal_series) quotients_length:
+  shows "length quotients + 1 = length \<GG>"
 proof -
-  have "length quotient_list + 1 = length [0..<((length \<GG>) - 1)] + 1" unfolding quotient_list_def by simp
+  have "length quotients + 1 = length [0..<((length \<GG>) - 1)] + 1" unfolding quotients_def by simp
   also have "... = (length \<GG> - 1) + 1" by (metis diff_zero length_upt)
   also with notempty have "... = length \<GG>" by (metis add_eq_if comm_monoid_diff_class.diff_cancel length_0_conv nat_add_commute zero_neq_one)
   finally show ?thesis .
@@ -385,7 +385,7 @@ next
   have "length \<GG> > 1"
   proof (rule ccontr)
     assume "\<not> 1 < length \<GG>"
-    hence "length \<GG> = 1" by (metis nat_add_commute nat_less_cases not_add_less1 quotient_list_length) 
+    hence "length \<GG> = 1" by (metis nat_add_commute nat_less_cases not_add_less1 quotients_length) 
     hence "carrier G = {\<one>}" using hd last by (metis composition_series_length_one composition_series_triv_group)
     hence "order G = 1" unfolding order_def by auto
     with simple show "False" unfolding simple_group_def simple_group_axioms_def by auto
