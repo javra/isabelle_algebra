@@ -131,12 +131,30 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     hence groupGbl:"group (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>)" by (metis comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_imp_group)
     have finGbl:"finite (carrier (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>))" using `n - 1 < length \<GG>` 1(3)
       using comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_finite by auto
-    have quots\<GG>notempty:"comp\<GG>.quotients \<noteq> []" sorry
-    have quots\<HH>notempty:"comp\<HH>.quotients \<noteq> []" sorry
+    have quots\<GG>notempty:"comp\<GG>.quotients \<noteq> []" using comp\<GG>.quotients_length length by auto
+    have quots\<HH>notempty:"comp\<HH>.quotients \<noteq> []" using comp\<HH>.quotients_length length\<HH>big by auto
     show ?thesis
     proof (cases "\<HH> ! (m - 1) = \<GG> ! (n - 1)")
       -- {* If \<HH> ! (l - 1) = \<GG> ! 1, everything is simple... *}
       case True
+      -- {* The last quotients of $\<GG> and \<HH>$ are equal. *}
+      have lasteq:"last comp\<GG>.quotients = last comp\<HH>.quotients"
+      proof -
+        from length have lg:"length \<GG> - 1 - 1 + 1 = length \<GG> - 1" by (metis Suc_diff_1 Suc_eq_plus1 n'(1) n_def)
+        from length\<HH>big have lh:"length \<HH> - 1 - 1 + 1 = length \<HH> - 1" by (metis Suc_diff_1 Suc_eq_plus1 `0 < m` m_def)
+        have "last comp\<GG>.quotients = comp\<GG>.quotients ! (length comp\<GG>.quotients - 1)" by (metis last_conv_nth quots\<GG>notempty)
+        also have "\<dots> = comp\<GG>.quotients ! (length \<GG> - 1 - 1)" by (metis add_diff_cancel_left' comp\<GG>.quotients_length nat_add_commute)
+        also have "\<dots> = G\<lparr>carrier := \<GG> ! ((length \<GG> - 1 - 1) + 1)\<rparr> Mod \<GG> ! (length \<GG> - 1 - 1)"
+          unfolding comp\<GG>.quotients_def using length by fastforce
+        also have "\<dots> = G\<lparr>carrier := \<GG> ! (length \<GG> - 1)\<rparr> Mod \<GG> ! (n - 1)" using lg unfolding n_def by auto
+        also have "\<dots> = G Mod \<HH> ! (m - 1)" using True comp\<GG>.last last_conv_nth comp\<GG>.notempty by force
+        also have "\<dots> = G\<lparr>carrier := \<HH> ! (length \<HH> - 1)\<rparr> Mod \<HH> ! (m - 1)" using comp\<HH>.last last_conv_nth comp\<HH>.notempty by force
+        also have "\<dots> = G\<lparr>carrier := \<HH> ! ((length \<HH> - 1 - 1) + 1)\<rparr> Mod \<HH> ! (length \<HH> - 1 - 1)" using lh unfolding m_def by auto
+        also have "\<dots> = comp\<HH>.quotients ! (length \<HH> - 1 - 1)" unfolding comp\<HH>.quotients_def using length\<HH>big by fastforce
+        also have "\<dots> = comp\<HH>.quotients ! (length comp\<HH>.quotients - 1)" by (metis calculation comp\<HH>.quotients_length diff_add_inverse nat_add_commute)
+        also have "\<dots> = last comp\<HH>.quotients" by (metis last_conv_nth quots\<HH>notempty)
+        finally show ?thesis .
+      qed
       interpret comp\<HH>butlast: composition_series "G\<lparr>carrier := \<HH> ! (m - 1)\<rparr>" "take m \<HH>"
         using comp\<HH>.composition_series_prefix_closed `m > 0` `m < length \<HH>` by auto
       interpret comp\<GG>butlast: composition_series "G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>" "take n \<GG>"
@@ -157,10 +175,11 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       also have "\<dots> = multiset_of (map group.iso_class comp\<HH>butlast.quotients) + {# group.iso_class (last (comp\<GG>.quotients)) #}"
         using ind by simp
       also have "\<dots> = multiset_of (map group.iso_class comp\<HH>butlast.quotients) + {# group.iso_class (last (comp\<HH>.quotients)) #}"
-        using last_conv_nth quots\<GG>notempty True unfolding n_def sorry
+        using lasteq by simp
       also have "\<dots> = multiset_of ((map group.iso_class comp\<HH>butlast.quotients) @ [group.iso_class (last (comp\<HH>.quotients))])"
         by auto
-      also have "\<dots> = multiset_of (map group.iso_class (comp\<HH>butlast.quotients @ [last (comp\<HH>.quotients)]))" by auto
+      also have "\<dots> = multiset_of (map group.iso_class (comp\<HH>butlast.quotients @ [last (comp\<HH>.quotients)]))"
+        by auto
       also have "\<dots> = multiset_of (map group.iso_class (butlast comp\<HH>.quotients @ [last comp\<HH>.quotients]))"
         using length\<HH>big comp\<HH>.quotients_butlast unfolding m_def by auto
       also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" using append_butlast_last_id quots\<HH>notempty by simp
