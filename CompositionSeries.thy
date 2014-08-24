@@ -727,20 +727,23 @@ apply (auto simp only: conjI del: equalityI)
 proof -
   show "group (G\<lparr>carrier := K\<rparr>)" using KG normal_imp_subgroup subgroup_imp_group by auto
 next
+  --  {* Show, that removing adjacent duplicates doesn't result in an empty list. *}
   assume "remdups_adj (map (op \<inter> K) \<GG>) = []"
   hence "map (op \<inter> K) \<GG> = []" by (metis remdups_adj_Nil_iff)
   hence "\<GG> = []" by (metis Nil_is_map_conv)
   with notempty show False..
 next
+  -- {* Show, that the head of the reduced list is still the trivial group *}
   have "\<GG> = {\<one>} # tl \<GG>" using notempty hd by (metis hd.simps neq_Nil_conv tl.simps(2))
   hence "map (op \<inter> K) \<GG> = map (op \<inter> K) ({\<one>} # tl \<GG>)" by simp
-  hence "map (op \<inter> K) \<GG> = (K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>))" by simp
   hence "remdups_adj (map (op \<inter> K) \<GG>) = remdups_adj ((K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>)))" by simp
   also have "\<dots> = (K \<inter> {\<one>}) # tl (remdups_adj ((K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>))))" by simp
   finally have "hd (remdups_adj (map (op \<inter> K) \<GG>)) = K \<inter> {\<one>}" using hd.simps by metis
   thus "hd (remdups_adj (map (op \<inter> K) \<GG>)) = {\<one>\<^bsub>G\<lparr>carrier := K\<rparr>\<^esub>}" 
     using KG normal_imp_subgroup subgroup.one_closed by force
 next
+  -- {* Show that the last entry is really $K \<inter> G$. Since we don't have a lemma ready to talk about the
+    last entry of a reduced list, we reverse the list twice. *}
   have "rev \<GG> = (carrier G) # tl (rev \<GG>)" by (metis hd.simps last last_rev neq_Nil_conv notempty rev_is_Nil_conv rev_rev_ident tl.simps(2))
   hence "rev (map (op \<inter> K) \<GG>) = map (op \<inter> K) ((carrier G) # tl (rev \<GG>))" by (metis rev_map)
   hence rev:"rev (map (op \<inter> K) \<GG>) = (K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>)))" by simp
@@ -749,10 +752,10 @@ next
   also have "\<dots> = hd (remdups_adj (rev (map (op \<inter> K) \<GG>)))" by (metis remdups_adj_rev)
   also have "\<dots> = hd (remdups_adj ((K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>)))))" by (metis rev)
   also have "\<dots> = hd ((K \<inter> (carrier G)) # (remdups_adj ((K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>))))))" by (metis hd.simps remdups_adj_Cons_alt)
-  also have "\<dots> = K \<inter> (carrier G)" by simp
   also have "\<dots> = K" using KG normal_imp_subgroup subgroup_imp_subset by force
   finally show "last (remdups_adj (map (op \<inter> K) \<GG>)) = carrier (G\<lparr>carrier := K\<rparr>)" by auto
 next
+  -- {* The induction step, using the second isomorphism theorem for groups. *}
   fix j
   assume j:"j + 1 < length (remdups_adj (map (op \<inter> K) \<GG>))"
   have KGnotempty:"(map (op \<inter> K) \<GG>) \<noteq> []" using notempty by (metis Nil_is_map_conv)
