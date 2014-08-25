@@ -14,7 +14,7 @@ begin
 locale jordan_hoelder = group
   + comp\<HH>: composition_series G \<HH>
   + comp\<GG>: composition_series G \<GG> for \<HH> and \<GG>
-  + assumes "finite (carrier G)"
+  + assumes finite:"finite (carrier G)"
 
 lemma (in group) setmult_lcos_assoc:
      "\<lbrakk>H \<subseteq> carrier G; K \<subseteq> carrier G; x \<in> carrier G\<rbrakk>
@@ -125,16 +125,26 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     ultimately have length\<HH>big:"length \<HH> \<ge> 3" using comp\<HH>.notempty by arith
     def m \<equiv> "length \<HH> - 1"
     def n \<equiv> "length \<GG> - 1"
-    from length\<HH>big have "m > 0" "m < length \<HH>" unfolding m_def by auto
+    from length\<HH>big have m':"m > 0" "m < length \<HH>" "(m - 1) + 1 < length \<HH>" "m - 1 = length \<HH> - 2" unfolding m_def by auto
     from length have n':"n > 0" "n < length \<GG>" "(n - 1) + 1 < length \<GG>" "n - 1 < length \<GG>" "Suc n \<le> length \<GG>"
       unfolding n_def by auto
-    hence groupGbl:"group (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>)" by (metis comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_imp_group)
-    have finGbl:"finite (carrier (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>))" using `n - 1 < length \<GG>` 1(3)
+    def \<GG>Pn \<equiv> "G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>"
+    def \<HH>Pm \<equiv> "G\<lparr>carrier := \<HH> ! (m - 1)\<rparr>"
+    then interpret grp\<GG>Pn: group \<GG>Pn unfolding \<GG>Pn_def using n' by (metis comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_imp_group)
+    interpret grp\<HH>Pm: group \<HH>Pm unfolding \<HH>Pm_def using m' comp\<HH>.normal_series_subgroups 1(2) group.subgroup_imp_group by force
+    have finGbl:"finite (carrier \<GG>Pn)" using `n - 1 < length \<GG>` 1(3)
+      unfolding \<GG>Pn_def
       using comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_finite by auto
     have quots\<GG>notempty:"comp\<GG>.quotients \<noteq> []" using comp\<GG>.quotients_length length by auto
     have quots\<HH>notempty:"comp\<HH>.quotients \<noteq> []" using comp\<HH>.quotients_length length\<HH>big by auto
+    
+    -- {* Instantiate truncated composition series since they are used for both cases *}
+    interpret \<HH>butlast: composition_series "G\<lparr>carrier := \<HH> ! (m - 1)\<rparr>" "take m \<HH>" using comp\<HH>.composition_series_prefix_closed m'(1,2) by auto
+    interpret \<GG>butlast: composition_series "G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>" "take n \<GG>" using comp\<GG>.composition_series_prefix_closed n'(1,2) by auto
+    have ltaken:"n = length (take n \<GG>)" using length_take n'(2) by auto
+    have ltakem:"m = length (take m \<HH>)" using length_take m'(2) by auto
     show ?thesis
-    proof (cases "\<HH> ! (m - 1) = \<GG> ! (n - 1)")
+    proof (cases "\<HH> ! (m - 1)  = \<GG> ! (n - 1)")
       -- {* If \<HH> ! (l - 1) = \<GG> ! 1, everything is simple... *}
       case True
       -- {* The last quotients of $\<GG> and \<HH>$ are equal. *}
@@ -147,150 +157,73 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         also have "\<dots> = G\<lparr>carrier := \<GG> ! ((length \<GG> - 1 - 1) + 1)\<rparr> Mod \<GG> ! (length \<GG> - 1 - 1)"
           unfolding comp\<GG>.quotients_def using length by fastforce
         also have "\<dots> = G\<lparr>carrier := \<GG> ! (length \<GG> - 1)\<rparr> Mod \<GG> ! (n - 1)" using lg unfolding n_def by auto
-        also have "\<dots> = G Mod \<HH> ! (m - 1)" using True comp\<GG>.last last_conv_nth comp\<GG>.notempty by force
-        also have "\<dots> = G\<lparr>carrier := \<HH> ! (length \<HH> - 1)\<rparr> Mod \<HH> ! (m - 1)" using comp\<HH>.last last_conv_nth comp\<HH>.notempty by force
+        also have "\<dots> = G Mod \<HH> ! (m - 1)" using True comp\<GG>.last last_conv_nth comp\<GG>.notempty unfolding m_def by force
+        also have "\<dots> = G\<lparr>carrier := \<HH> ! (length \<HH> - 1)\<rparr> Mod \<HH> ! (m - 1)" using comp\<HH>.last last_conv_nth comp\<HH>.notempty by force 
         also have "\<dots> = G\<lparr>carrier := \<HH> ! ((length \<HH> - 1 - 1) + 1)\<rparr> Mod \<HH> ! (length \<HH> - 1 - 1)" using lh unfolding m_def by auto
         also have "\<dots> = comp\<HH>.quotients ! (length \<HH> - 1 - 1)" unfolding comp\<HH>.quotients_def using length\<HH>big by fastforce
         also have "\<dots> = comp\<HH>.quotients ! (length comp\<HH>.quotients - 1)" by (metis calculation comp\<HH>.quotients_length diff_add_inverse nat_add_commute)
         also have "\<dots> = last comp\<HH>.quotients" by (metis last_conv_nth quots\<HH>notempty)
         finally show ?thesis .
       qed
-      interpret comp\<HH>butlast: composition_series "G\<lparr>carrier := \<HH> ! (m - 1)\<rparr>" "take m \<HH>"
-        using comp\<HH>.composition_series_prefix_closed `m > 0` `m < length \<HH>` by auto
-      interpret comp\<GG>butlast: composition_series "G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>" "take n \<GG>"
-        using comp\<GG>.composition_series_prefix_closed `n > 0` `n < length \<GG>` by auto
-      have "n = length (take n \<GG>)" using length_take `n < length \<GG>` by auto
-      hence ind:"multiset_of (map group.iso_class comp\<GG>butlast.quotients) = multiset_of (map group.iso_class comp\<HH>butlast.quotients)"
-        using 1(1) True n'(5) groupGbl finGbl comp\<GG>butlast.is_composition_series comp\<HH>butlast.is_composition_series
-        by metis
+      from ltaken have ind:"multiset_of (map group.iso_class \<GG>butlast.quotients) = multiset_of (map group.iso_class \<HH>butlast.quotients)"
+        using 1(1) True n'(5) grp\<GG>Pn.is_group finGbl \<GG>butlast.is_composition_series \<HH>butlast.is_composition_series unfolding \<GG>Pn_def by metis
       have "multiset_of (map group.iso_class comp\<GG>.quotients)
-                    = multiset_of (map group.iso_class (butlast comp\<GG>.quotients @ [last comp\<GG>.quotients]))"
-        using append_butlast_last_id quots\<GG>notempty by simp
-      also have "\<dots> = multiset_of (map group.iso_class (comp\<GG>butlast.quotients @ [last (comp\<GG>.quotients)]))"
-        using comp\<GG>.quotients_butlast length unfolding n_def by auto
-      also have "\<dots> = multiset_of ((map group.iso_class comp\<GG>butlast.quotients) @ [group.iso_class (last (comp\<GG>.quotients))])"
-        by auto
-      also have "\<dots> = multiset_of (map group.iso_class comp\<GG>butlast.quotients) + {# group.iso_class (last (comp\<GG>.quotients)) #}"
-        by auto
-      also have "\<dots> = multiset_of (map group.iso_class comp\<HH>butlast.quotients) + {# group.iso_class (last (comp\<GG>.quotients)) #}"
-        using ind by simp
-      also have "\<dots> = multiset_of (map group.iso_class comp\<HH>butlast.quotients) + {# group.iso_class (last (comp\<HH>.quotients)) #}"
-        using lasteq by simp
-      also have "\<dots> = multiset_of ((map group.iso_class comp\<HH>butlast.quotients) @ [group.iso_class (last (comp\<HH>.quotients))])"
-        by auto
-      also have "\<dots> = multiset_of (map group.iso_class (comp\<HH>butlast.quotients @ [last (comp\<HH>.quotients)]))"
-        by auto
-      also have "\<dots> = multiset_of (map group.iso_class (butlast comp\<HH>.quotients @ [last comp\<HH>.quotients]))"
-        using length\<HH>big comp\<HH>.quotients_butlast unfolding m_def by auto
+                    = multiset_of (map group.iso_class (butlast comp\<GG>.quotients @ [last comp\<GG>.quotients]))" by (simp add: quots\<GG>notempty)
+      also have "\<dots> = multiset_of (map group.iso_class (\<GG>butlast.quotients @ [last (comp\<GG>.quotients)]))" using comp\<GG>.quotients_butlast length unfolding n_def by auto
+      also have "\<dots> = multiset_of ((map group.iso_class \<GG>butlast.quotients) @ [group.iso_class (last (comp\<GG>.quotients))])" by auto
+      also have "\<dots> = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (last (comp\<GG>.quotients)) #}" by auto
+      also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (last (comp\<GG>.quotients)) #}" using ind by simp
+      also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (last (comp\<HH>.quotients)) #}" using lasteq by simp
+      also have "\<dots> = multiset_of ((map group.iso_class \<HH>butlast.quotients) @ [group.iso_class (last (comp\<HH>.quotients))])" by auto
+      also have "\<dots> = multiset_of (map group.iso_class (\<HH>butlast.quotients @ [last (comp\<HH>.quotients)]))" by auto
+      also have "\<dots> = multiset_of (map group.iso_class (butlast comp\<HH>.quotients @ [last comp\<HH>.quotients]))" using length\<HH>big comp\<HH>.quotients_butlast unfolding m_def by auto
       also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" using append_butlast_last_id quots\<HH>notempty by simp
       finally show ?thesis .
     next
-      case False
-      show ?thesis sorry
-    qed
-  qed
-qed
-
-(**
-      from length have "simple_group (G\<lparr>carrier := \<GG> ! 1\<rparr>)"
-      with True have "simple_group (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>)" by simp
-      hence lchar:"l - 1 = 1" by (metis comp\<HH>.composition_snd_simple_iff comp\<HH>.notempty diff_less l_def length_greater_0_conv less_imp_diff_less zero_less_one)
-      hence length\<HH>:"length \<HH> = 3" unfolding l_def by simp
-      have eq0:"\<GG> ! 0 = \<HH> ! 0" using hd_conv_nth comp\<GG>.hd comp\<HH>.hd comp\<GG>.notempty comp\<HH>.notempty by metis
-      moreover have eq1:"\<GG> ! 1 = \<HH> ! 1" using True lchar by simp
-      moreover have eq2:"\<GG> ! 2 = \<HH> ! 2" using length last_conv_nth comp\<GG>.notempty comp\<GG>.last length\<HH> last_conv_nth comp\<HH>.notempty comp\<HH>.last by force
-      -- {* TODO: do this more gracefully *}
-      ultimately have "\<And>i. i < length \<GG> \<Longrightarrow> \<GG> ! i = \<HH> ! i"
-      proof -
-        fix i
-        assume i:"i < length \<GG>"
-        hence "i = 0 \<or> i = 1 \<or> i = 2" using length by arith
-        with eq0 eq1 eq2 show "\<GG> ! i = \<HH> ! i" by auto
-      qed
-      hence "\<GG> = \<HH>" using length length\<HH> by (metis list_eq_iff_nth_eq)
-      thus ?thesis by simp
-    next
-      case False
-      -- {* If \<HH> ! (l - 1) \<noteq> \<GG> ! 1, we have to take a closer look at the quotients: *}
-      -- {* (\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) is a normal subgroup of (\<GG> ! 1) *}
-      have "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) \<lhd> (G\<lparr>carrier := (\<GG> ! 1)\<rparr>)"
-        apply (rule second_isomorphism_grp.normal_subgrp_intersection_normal)
-        unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def l_def
-        using comp\<HH>.normal_series_snd_to_last length comp\<GG>.normal_series_snd_to_last normal_imp_subgroup
-        by (metis One_nat_def Suc_1 diff_Suc_1 diff_Suc_eq_diff_pred normal_imp_subgroup numeral_3_eq_3)
-      -- {* And since (\<GG> ! 1) is simple its either trivial or (\<GG> ! 1) itself. *}
-      hence "(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>} \<or> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))"
-        using comp\<GG>.composition_series_snd_simple unfolding simple_group_def simple_group_axioms_def length
-        by auto
-      moreover 
-      have "max_normal_subgroup (\<GG> ! (length \<GG> - 2)) G" using length comp\<GG>.snd_to_last_max_normal
-        by (metis "1.prems"(2) one_less_numeral_iff semiring_norm(77))
-      with length have G1max:"max_normal_subgroup (\<GG> ! 1) G" by auto
-      have lminus1:"l - 1 = length \<HH> - 2" unfolding l_def using length\<HH>big by auto
-      hence HnormG:"\<HH> ! (l - 1) \<lhd> G" unfolding l_def using comp\<HH>.normal_series_snd_to_last by auto
-      have "\<HH> ! (l - 1) \<noteq> carrier G" unfolding l_def
-        using "1.prems"(2)unfolding l_def 
-        by (metis One_nat_def lminus1 `length \<HH> \<noteq> 0` `length \<HH> \<noteq> 1` comp\<HH>.snd_to_last_max_normal l_def less_Suc0 max_normal_subgroup.proper nat_neq_iff)
-      with HnormG G1max have "\<not> (\<GG> ! 1) \<subseteq> (\<HH> ! (l - 1))"
-        unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def
-        using False by auto
-      ultimately have intertriv:"(\<GG> ! 1) \<inter> (\<HH> ! (l - 1)) = {\<one>\<^bsub>G\<^esub>}" by simp
-      have "\<GG> ! 1 \<subseteq> (\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1))"
-        using second_isomorphism_grp.H_contained_in_set_mult
-        unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def
-        using G1max HnormG normal_imp_subgroup
-        unfolding max_normal_subgroup_def by metis
-      moreover have "\<GG> ! 1 \<noteq> (\<GG> ! 1) <#>\<^bsub>G\<^esub> \<HH> ! (l - 1)" 
-      proof -
-        have "\<HH> ! (l - 1) \<noteq> {\<one>\<^bsub>G\<^esub>}" using lminus1 length\<HH>big comp\<HH>.inner_elements_not_triv by fastforce
-        then obtain h where h:"h \<in> \<HH> ! (l - 1)" and "h \<noteq> \<one>\<^bsub>G\<^esub>" using HnormG normal_imp_subgroup subgroup.one_closed by fastforce
-        hence "h \<notin> \<GG> ! 1" using intertriv by auto
-        moreover from h have "\<one>\<^bsub>G\<^esub> \<otimes>\<^bsub>G\<^esub> h \<in> (\<GG> ! 1) <#>\<^bsub>G\<^esub> \<HH> ! (l - 1)"
-          unfolding set_mult_def using G1max unfolding max_normal_subgroup_def using normal_imp_subgroup
-          using subgroup.one_closed by fastforce
-        hence "h \<in> (\<GG> ! 1) <#>\<^bsub>G\<^esub> \<HH> ! (l - 1)" using comp\<GG>.l_one h HnormG normal_imp_subgroup subgroup_imp_subset by force
-        ultimately show ?thesis by metis
-      qed
-      ultimately have "(\<GG> ! 1) <#>\<^bsub>G\<^esub> (\<HH> ! (l - 1)) = carrier G" using G1max HnormG comp\<GG>.normal_subgroup_setmult
+      case False      
+      have GPnmax:"max_normal_subgroup (\<GG> ! (n - 1)) G" unfolding n_def
+        by (metis add_lessD1 diff_diff_add n'(3) nat_add_commute one_add_one 1(3) comp\<GG>.snd_to_last_max_normal)
+      have HPmmax:"max_normal_subgroup (\<HH> ! (m - 1)) G" unfolding m_def
+        by (metis add_lessD1 diff_diff_add m'(3) nat_add_commute one_add_one 1(3) comp\<HH>.snd_to_last_max_normal)
+      have HPmnormG:"(\<HH> ! (m - 1)) \<lhd> G" using comp\<HH>.normal_series_snd_to_last m'(4) unfolding m_def by auto
+      have "\<GG> ! (n - 1) \<subseteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1))"
+        using second_isomorphism_grp.H_contained_in_set_mult GPnmax HPmnormG normal_imp_subgroup
+        unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def by metis
+      moreover have "\<GG> ! (n - 1) \<noteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> \<HH> ! (m - 1)" sorry
+      ultimately have "(\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1)) = carrier G" using GPnmax HPmnormG comp\<GG>.normal_subgroup_setmult
         unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def by metis
-      -- {* Find suitable isomophisms to show  G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G Mod (\<GG> ! 1)*}
-      then obtain \<phi> where "\<phi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := carrier G\<rparr> Mod (\<GG> ! 1)"
-        using G1max HnormG normal_imp_subgroup second_isomorphism_grp.normal_intersection_quotient_isom intertriv
-        unfolding max_normal_subgroup_def second_isomorphism_grp_def second_isomorphism_grp_axioms_def
-        by metis
-      hence \<phi>:"\<phi> \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G Mod (\<GG> ! 1)" by auto
-      obtain \<psi> where "\<psi> \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>"
-        using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.trivial_factor_iso
-        by metis
-      hence \<psi>:"\<psi> \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>} \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr>" by auto
-      have "{\<one>\<^bsub>G\<^esub>} \<lhd> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>"
-        using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.triv_normal_subgroup by force
-      hence "group (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>})" by (rule normal.factorgroup_is_group)
-      with \<psi> have "inv_into (carrier (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> Mod {\<one>\<^bsub>G\<^esub>})) \<psi> \<in> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> \<cong> G\<lparr>carrier := (\<HH> ! (l - 1))\<rparr> Mod {\<one>\<^bsub>G\<^esub>}"
-        using group.iso_sym by auto
-      with \<phi> obtain \<phi>' where \<phi>':"\<phi>' \<in> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr> \<cong> G Mod (\<GG> ! 1)"
-        using HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group group.iso_trans by metis
-      then obtain inv\<phi>' where inv\<phi>':"inv\<phi>' \<in> G Mod (\<GG> ! 1) \<cong> G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>"
-        using group.iso_sym HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group by metis
-      have "simple_group (G\<lparr>carrier := \<GG> ! (1 + 1)\<rparr> Mod (\<GG> ! 1))" using length comp\<GG>.simplefact by auto (* this is annoying... *)
-      hence "simple_group (G\<lparr>carrier := \<GG> ! (length \<GG> - 1)\<rparr> Mod (\<GG> ! 1))" using length
-        by (metis add_diff_cancel_left' one_add_one one_plus_numeral semiring_norm(3))
-      hence "simple_group (G Mod (\<GG> ! 1))" using comp\<GG>.notempty last_conv_nth comp\<GG>.last by fastforce
-      hence "simple_group (G\<lparr>carrier := \<HH> ! (l - 1)\<rparr>)"
-        using inv\<phi>' simple_group.iso_simple HnormG normal_imp_subgroup comp\<GG>.subgroup_imp_group
-        by metis
-      hence "l - 1 = 1" by (metis Nat.add_0_right `length \<HH> \<noteq> 0` add_eq_if comp\<HH>.composition_snd_simple_iff l_def lessI less_imp_diff_less)
-      hence "l = 2" by arith
-      (* Here be Analogiegruende *)
-      obtain \<phi>'' where "\<phi>'' \<in> G Mod (\<HH> ! 1) \<cong> G\<lparr>carrier := \<GG> ! 1\<rparr>" sorry
-      then obtain \<phi>''' where "\<phi>''' \<in> G\<lparr>carrier := \<HH> ! 2\<rparr> Mod (\<HH> ! 1) \<cong> G\<lparr>carrier := \<GG> ! 1\<rparr> Mod (\<GG> ! 0)"
+      then obtain \<phi> where "\<phi> \<in> (G Mod \<HH> ! (m - 1)) \<cong> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
         sorry
-      obtain \<psi>''' where "\<psi>''' \<in> G\<lparr>carrier := \<GG> ! 2\<rparr> Mod (\<GG> ! 1) \<cong> G\<lparr>carrier := \<HH> ! 1\<rparr> Mod (\<HH> ! 0)"
-        
+      moreover have "group (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr> Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))" sorry
+      moreover have "simple_group (G Mod \<HH> ! (m - 1))" using comp\<HH>.simplefact sorry
+      ultimately have "simple_group (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr> Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
+        using simple_group.iso_simple by auto
+      
+      -- {* Instantiate several composition series used to build up the equality of quotient multisets. *}
+      def \<GG>Pnint\<HH>Pm \<equiv> "G\<lparr>carrier := \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)\<rparr>"
+      def \<KK> \<equiv> "remdups_adj (map (op \<inter> (\<HH> ! (m - 1))) \<GG>)"
+      def \<LL> \<equiv> "remdups_adj (map (op \<inter> (\<GG> ! (n - 1))) \<HH>)"
+      interpret \<KK>: composition_series \<GG>Pn \<KK> sorry
+      interpret \<LL>: composition_series \<HH>Pm \<LL> sorry
+      interpret \<KK>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<KK> - 1) \<KK>" sorry
+      interpret \<LL>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<LL> - 1) \<LL>" sorry
+      interpret \<KK>butlastadd\<GG>Pn: composition_series \<GG>Pn "(take (length \<KK> - 1) \<KK>) @ [\<GG> ! (n - 1)]" sorry
+      interpret \<LL>butlastadd\<HH>Pm: composition_series \<HH>Pm "(take (length \<LL> - 1) \<LL>) @ [\<HH> ! (m - 1)]" sorry
+      
+      -- {* Prove equality of those composition series. *}
+      have "multiset_of (map group.iso_class comp\<GG>.quotients)
+              = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" sorry
+      also have "\<dots> = multiset_of (map group.iso_class \<KK>.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" sorry
+      also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)), group.iso_class (\<GG>Pn Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
+      also have "\<dots> = multiset_of (map group.iso_class \<LL>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)), group.iso_class (\<GG>Pn Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
+      also have "\<dots> = multiset_of (map group.iso_class \<LL>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)), group.iso_class (\<HH>Pm Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
+      also have "\<dots> = multiset_of (map group.iso_class \<LL>.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" sorry
+      also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" sorry
+      also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" sorry
+      finally show ?thesis .
     qed
   qed
 qed
-oops**)
 
 text {* As a corollary, we see that the composition series of a fixed group
 all have the same length. *}
@@ -301,7 +234,8 @@ proof -
   have "length \<GG> = length comp\<GG>.quotients + 1" by (metis comp\<GG>.quotients_length)
   also have "\<dots> = length (map group.iso_class comp\<GG>.quotients) + 1" by (metis length_map)
   also have "\<dots> = size (multiset_of (map group.iso_class comp\<GG>.quotients)) + 1" by (metis size_multiset_of)
-  also have "\<dots> = size (multiset_of (map group.iso_class comp\<HH>.quotients)) + 1" sorry
+  also have "\<dots> = size (multiset_of (map group.iso_class comp\<HH>.quotients)) + 1"
+    using jordan_hoelder_multisets
   also have "\<dots> = length (map group.iso_class comp\<HH>.quotients) + 1" by (metis size_multiset_of)
   also have "\<dots> = length comp\<HH>.quotients + 1" by (metis length_map)
   also have "\<dots> = length \<HH>" by (metis comp\<HH>.quotients_length)
