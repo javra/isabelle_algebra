@@ -195,7 +195,7 @@ proof -
   ultimately show "i < length \<GG> \<Longrightarrow> subgroup (\<GG> ! i) G" by force
 qed
 
-text {* The second to last entry of a normal series is a normal subgroup of G *}
+text {* The second to last entry of a normal series is a normal subgroup of G. *}
 
 lemma (in normal_series) normal_series_snd_to_last:
   shows "\<GG> ! (length \<GG> - 2) \<lhd> G"
@@ -803,6 +803,32 @@ next
       using KGsiKGigroup group.iso_sym by auto
     with Gisimple KGsiKGigroup have "simple_group (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr> Mod (K \<inter> \<GG> ! i))" by (metis simple_group.iso_simple)
     with i show "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)" by auto
+  qed
+qed
+
+lemma (in group) extend:
+  assumes "composition_series (G\<lparr>carrier := H\<rparr>) \<HH>"
+  assumes "simple_group (G Mod H)" "H \<lhd> G"
+  shows "composition_series G (\<HH> @ [carrier G])"
+unfolding composition_series_def composition_series_axioms_def
+proof auto
+  from assms(1) interpret comp\<HH>: composition_series "G\<lparr>carrier := H\<rparr>" \<HH> .
+  show "normal_series G (\<HH> @ [carrier G])" using  assms(3) comp\<HH>.is_normal_series by (metis expand_normal_series)
+  fix i
+  assume i:"i < length \<HH>"
+  show "simple_group (G\<lparr>carrier := (\<HH> @ [carrier G]) ! Suc i\<rparr> Mod (\<HH> @ [carrier G]) ! i)"
+  proof (cases "i = length \<HH> - 1")
+    case True
+    hence "(\<HH> @ [carrier G]) ! Suc i = carrier G" by (metis i diff_Suc_1 lessE nth_append_length)
+    moreover have "(\<HH> @ [carrier G]) ! i = \<HH> ! i"by (metis butlast_snoc i nth_butlast)
+    hence "(\<HH> @ [carrier G]) ! i = H" using True last_conv_nth comp\<HH>.notempty comp\<HH>.last by auto
+    ultimately show ?thesis using assms(2) by auto
+  next
+    case False
+    hence "Suc i < length \<HH>" using i by auto
+    hence "(\<HH> @ [carrier G]) ! Suc i = \<HH> ! Suc i" using nth_append by metis
+    moreover from i have "(\<HH> @ [carrier G]) ! i = \<HH> ! i" using nth_append by metis
+    ultimately show ?thesis using `Suc i < length \<HH>` comp\<HH>.simplefact by auto
   qed
 qed
 
