@@ -82,7 +82,7 @@ theorem jordan_hoelder_multisets:
 using assms
 proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
   print_cases
-  case 1
+  case (1 \<GG> \<HH> G)
   then interpret comp\<GG>: composition_series G \<GG> by simp
   from 1 interpret comp\<HH>: composition_series G \<HH> by simp
   from 1 interpret grpG: group G by simp
@@ -133,15 +133,14 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     def \<HH>Pm \<equiv> "G\<lparr>carrier := \<HH> ! (m - 1)\<rparr>"
     then interpret grp\<GG>Pn: group \<GG>Pn unfolding \<GG>Pn_def using n' by (metis comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_imp_group)
     interpret grp\<HH>Pm: group \<HH>Pm unfolding \<HH>Pm_def using m' comp\<HH>.normal_series_subgroups 1(2) group.subgroup_imp_group by force
-    have finGbl:"finite (carrier \<GG>Pn)" using `n - 1 < length \<GG>` 1(3)
-      unfolding \<GG>Pn_def
-      using comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_finite by auto
+    have finGbl:"finite (carrier \<GG>Pn)" using `n - 1 < length \<GG>` 1(3) unfolding \<GG>Pn_def using comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_finite by auto
+    have finHbl:"finite (carrier \<HH>Pm)" using `m - 1 < length \<HH>` 1(3) unfolding \<HH>Pm_def using comp\<HH>.normal_series_subgroups comp\<GG>.subgroup_finite by auto
     have quots\<GG>notempty:"comp\<GG>.quotients \<noteq> []" using comp\<GG>.quotients_length length by auto
     have quots\<HH>notempty:"comp\<HH>.quotients \<noteq> []" using comp\<HH>.quotients_length length\<HH>big by auto
     
     -- {* Instantiate truncated composition series since they are used for both cases *}
-    interpret \<HH>butlast: composition_series "G\<lparr>carrier := \<HH> ! (m - 1)\<rparr>" "take m \<HH>" using comp\<HH>.composition_series_prefix_closed m'(1,2) by auto
-    interpret \<GG>butlast: composition_series "G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>" "take n \<GG>" using comp\<GG>.composition_series_prefix_closed n'(1,2) by auto
+    interpret \<HH>butlast: composition_series \<HH>Pm "take m \<HH>" using comp\<HH>.composition_series_prefix_closed m'(1,2) \<HH>Pm_def by auto
+    interpret \<GG>butlast: composition_series \<GG>Pn "take n \<GG>" using comp\<GG>.composition_series_prefix_closed n'(1,2) \<GG>Pn_def by auto
     have ltaken:"n = length (take n \<GG>)" using length_take n'(2) by auto
     have ltakem:"m = length (take m \<HH>)" using length_take m'(2) by auto
     show ?thesis
@@ -167,17 +166,17 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         finally show ?thesis .
       qed
       from ltaken have ind:"multiset_of (map group.iso_class \<GG>butlast.quotients) = multiset_of (map group.iso_class \<HH>butlast.quotients)"
-        using 1(1) True n'(5) grp\<GG>Pn.is_group finGbl \<GG>butlast.is_composition_series \<HH>butlast.is_composition_series unfolding \<GG>Pn_def by metis
+        using 1(1) True n'(5) grp\<GG>Pn.is_group finGbl \<GG>butlast.is_composition_series \<HH>butlast.is_composition_series unfolding \<GG>Pn_def \<HH>Pm_def by metis
       have "multiset_of (map group.iso_class comp\<GG>.quotients)
                     = multiset_of (map group.iso_class (butlast comp\<GG>.quotients @ [last comp\<GG>.quotients]))" by (simp add: quots\<GG>notempty)
-      also have "\<dots> = multiset_of (map group.iso_class (\<GG>butlast.quotients @ [last (comp\<GG>.quotients)]))" using comp\<GG>.quotients_butlast length unfolding n_def by auto
+      also have "\<dots> = multiset_of (map group.iso_class (\<GG>butlast.quotients @ [last (comp\<GG>.quotients)]))" using comp\<GG>.quotients_butlast length unfolding n_def \<GG>Pn_def by auto
       also have "\<dots> = multiset_of ((map group.iso_class \<GG>butlast.quotients) @ [group.iso_class (last (comp\<GG>.quotients))])" by auto
       also have "\<dots> = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (last (comp\<GG>.quotients)) #}" by auto
       also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (last (comp\<GG>.quotients)) #}" using ind by simp
       also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (last (comp\<HH>.quotients)) #}" using lasteq by simp
       also have "\<dots> = multiset_of ((map group.iso_class \<HH>butlast.quotients) @ [group.iso_class (last (comp\<HH>.quotients))])" by auto
       also have "\<dots> = multiset_of (map group.iso_class (\<HH>butlast.quotients @ [last (comp\<HH>.quotients)]))" by auto
-      also have "\<dots> = multiset_of (map group.iso_class (butlast comp\<HH>.quotients @ [last comp\<HH>.quotients]))" using length\<HH>big comp\<HH>.quotients_butlast unfolding m_def by auto
+      also have "\<dots> = multiset_of (map group.iso_class (butlast comp\<HH>.quotients @ [last comp\<HH>.quotients]))" using length\<HH>big comp\<HH>.quotients_butlast unfolding m_def \<HH>Pm_def by auto
       also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" using append_butlast_last_id quots\<HH>notempty by simp
       finally show ?thesis .
     next
@@ -238,10 +237,23 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       def \<LL> \<equiv> "remdups_adj (map (op \<inter> (\<GG> ! (n - 1))) \<HH>)"
       interpret \<KK>: composition_series \<HH>Pm \<KK> using comp\<GG>.intersect_normal 1(3) \<HH>PmnormG unfolding \<KK>_def \<HH>Pm_def by auto
       interpret \<LL>: composition_series \<GG>Pn \<LL> using comp\<HH>.intersect_normal 1(3) \<GG>PnnormG unfolding \<LL>_def \<GG>Pn_def by auto
-      have "\<GG>Pnint\<HH>Pm = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" "length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<KK>" sorry
-      then interpret \<KK>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<KK> - 1) \<KK>" using \<KK>.composition_series_prefix_closed by metis
-      
-      interpret \<LL>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<LL> - 1) \<LL>" sorry
+
+      from m'(2) have "Suc (length (take m \<HH>)) \<le> length \<HH>" by auto
+      hence multisets\<HH>butlast\<KK>:"multiset_of (map group.iso_class \<HH>butlast.quotients) = multiset_of (map group.iso_class \<KK>.quotients)"
+        using  "1.hyps" grp\<HH>Pm.is_group finHbl \<HH>butlast.is_composition_series \<KK>.is_composition_series sorry (* UGH!!! *)
+      hence length\<KK>:"m = length \<KK>" using \<HH>butlast.quotients_length \<KK>.quotients_length length_map size_multiset_of ltakem by metis
+      hence  "length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<KK>" using m'(4) length\<HH>big by auto
+      moreover have "\<GG>Pnint\<HH>Pm = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" sorry
+      ultimately interpret \<KK>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<KK> - 1) \<KK>" using \<KK>.composition_series_prefix_closed by metis
+
+      from n'(2) have "Suc (length (take n \<GG>)) \<le> length \<GG>" by auto
+      hence multisets\<GG>butlast\<LL>:"multiset_of (map group.iso_class \<GG>butlast.quotients) = multiset_of (map group.iso_class \<LL>.quotients)"
+        using  "1.hyps" grp\<GG>Pn.is_group finGbl \<GG>butlast.is_composition_series \<LL>.is_composition_series by metis
+      hence length\<LL>:"n = length \<LL>" using \<GG>butlast.quotients_length \<LL>.quotients_length length_map size_multiset_of ltaken by metis
+      hence "length \<LL> - 1 > 0" "length \<LL> - 1 \<le> length \<LL>" using n'(6) length by auto
+      moreover have "\<GG>Pnint\<HH>Pm = (\<GG>Pn\<lparr>carrier := \<LL> ! (length \<LL> - 1 - 1)\<rparr>)" sorry
+      ultimately interpret \<LL>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<LL> - 1) \<LL>" using \<LL>.composition_series_prefix_closed by metis
+
       interpret \<KK>butlastadd\<GG>Pn: composition_series \<GG>Pn "(take (length \<KK> - 1) \<KK>) @ [\<GG> ! (n - 1)]" sorry
       interpret \<LL>butlastadd\<HH>Pm: composition_series \<HH>Pm "(take (length \<LL> - 1) \<LL>) @ [\<HH> ! (m - 1)]" sorry
       
