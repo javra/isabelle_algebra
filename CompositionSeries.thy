@@ -270,6 +270,21 @@ proof -
   finally show ?thesis .
 qed
 
+lemma (in normal_series) last_quotient:
+  assumes "length \<GG> > 1"
+  shows "last quotients = G Mod \<GG> ! (length \<GG> - 1 - 1)"
+proof -
+  from assms have lsimp:"length \<GG> - 1 - 1 + 1 = length \<GG> - 1" by auto
+  from assms have "quotients \<noteq> []" unfolding quotients_def by auto
+  hence "last quotients = quotients ! (length quotients - 1)" by (metis last_conv_nth)
+  also have "\<dots> = quotients ! (length \<GG> - 1 - 1)" by (metis add_diff_cancel_left' quotients_length nat_add_commute)
+  also have "\<dots> = G\<lparr>carrier := \<GG> ! ((length \<GG> - 1 - 1) + 1)\<rparr> Mod \<GG> ! (length \<GG> - 1 - 1)"
+    unfolding quotients_def using assms by auto
+  also have "\<dots> = G\<lparr>carrier := \<GG> ! (length \<GG> - 1)\<rparr> Mod \<GG> ! (length \<GG> - 1 - 1)" using lsimp by simp
+  also have "\<dots> = G Mod \<GG> ! (length \<GG> - 1 - 1)" using last last_conv_nth notempty by force
+  finally show ?thesis .
+qed
+
 text {* The next lemma transports the constituting properties of a normal series
 along an isomorphism of groups. *}
 

@@ -39,20 +39,20 @@ next
   finally show " M <#> N #> g = g <# (M <#> N)".
 qed
 
-lemma (in composition_series) quotients_butlast:
+lemma (in normal_series) quotients_butlast:
   assumes "length \<GG> > 1"
   shows "butlast quotients = normal_series.quotients (G\<lparr>carrier := \<GG> ! (length \<GG> - 1 - 1)\<rparr>) (take (length \<GG> - 1) \<GG>)"
 proof (rule nth_equalityI )
   def n \<equiv> "length \<GG> - 1"
   hence "n = length (take n \<GG>)" "n > 0" "n < length \<GG>" using assms notempty by auto
-  interpret comp\<GG>butlast: composition_series "(G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>)" "take n \<GG>" 
-    using composition_series_prefix_closed `n > 0` `n < length \<GG>` by auto
+  interpret normal\<GG>butlast: normal_series "(G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>)" "take n \<GG>" 
+    using normal_series_prefix_closed `n > 0` `n < length \<GG>` by auto
   have "length (butlast quotients) = length quotients - 1" by (metis length_butlast)
   also have "\<dots> = length \<GG> - 1 - 1" by (metis add_diff_cancel_right' quotients_length)
   also have "\<dots> = length (take n \<GG>) - 1" by (metis `n = length (take n \<GG>)` n_def)
-  also have "\<dots> = length comp\<GG>butlast.quotients" by (metis comp\<GG>butlast.quotients_length diff_add_inverse2)
-  finally show "length (butlast quotients) = length comp\<GG>butlast.quotients" .
-  have "\<forall>i<length (butlast quotients). butlast quotients ! i = comp\<GG>butlast.quotients ! i"
+  also have "\<dots> = length normal\<GG>butlast.quotients" by (metis normal\<GG>butlast.quotients_length diff_add_inverse2)
+  finally show "length (butlast quotients) = length normal\<GG>butlast.quotients" .
+  have "\<forall>i<length (butlast quotients). butlast quotients ! i = normal\<GG>butlast.quotients ! i"
   proof auto
     fix i
     assume i:"i < length quotients - Suc 0"
@@ -60,7 +60,7 @@ proof (rule nth_equalityI )
     from i have "butlast quotients ! i = quotients ! i" by (metis One_nat_def length_butlast nth_butlast)
     also have "\<dots> = G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i" unfolding quotients_def using i'(1) by auto
     also have "\<dots> = G\<lparr>carrier := (take n \<GG>) ! (i + 1)\<rparr> Mod (take n \<GG>) ! i" using i'(2,3) nth_take by metis
-    also have "\<dots> = comp\<GG>butlast.quotients ! i" unfolding comp\<GG>butlast.quotients_def using i' by fastforce
+    also have "\<dots> = normal\<GG>butlast.quotients ! i" unfolding normal\<GG>butlast.quotients_def using i' by fastforce
     finally show "butlast (normal_series.quotients G \<GG>) ! i = normal_series.quotients (G\<lparr>carrier := \<GG> ! (n - Suc 0)\<rparr>) (take n \<GG>) ! i" by auto
   qed
   thus "\<forall>i<length (butlast quotients). butlast quotients ! i
@@ -152,17 +152,9 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       proof -
         from length have lg:"length \<GG> - 1 - 1 + 1 = length \<GG> - 1" by (metis Suc_diff_1 Suc_eq_plus1 n'(1) n_def)
         from length\<HH>big have lh:"length \<HH> - 1 - 1 + 1 = length \<HH> - 1" by (metis Suc_diff_1 Suc_eq_plus1 `0 < m` m_def)
-        have "last comp\<GG>.quotients = comp\<GG>.quotients ! (length comp\<GG>.quotients - 1)" by (metis last_conv_nth quots\<GG>notempty)
-        also have "\<dots> = comp\<GG>.quotients ! (length \<GG> - 1 - 1)" by (metis add_diff_cancel_left' comp\<GG>.quotients_length nat_add_commute)
-        also have "\<dots> = G\<lparr>carrier := \<GG> ! ((length \<GG> - 1 - 1) + 1)\<rparr> Mod \<GG> ! (length \<GG> - 1 - 1)"
-          unfolding comp\<GG>.quotients_def using length by fastforce
-        also have "\<dots> = G\<lparr>carrier := \<GG> ! (length \<GG> - 1)\<rparr> Mod \<GG> ! (n - 1)" using lg unfolding n_def by auto
-        also have "\<dots> = G Mod \<HH> ! (m - 1)" using True comp\<GG>.last last_conv_nth comp\<GG>.notempty unfolding m_def by force
-        also have "\<dots> = G\<lparr>carrier := \<HH> ! (length \<HH> - 1)\<rparr> Mod \<HH> ! (m - 1)" using comp\<HH>.last last_conv_nth comp\<HH>.notempty by force 
-        also have "\<dots> = G\<lparr>carrier := \<HH> ! ((length \<HH> - 1 - 1) + 1)\<rparr> Mod \<HH> ! (length \<HH> - 1 - 1)" using lh unfolding m_def by auto
-        also have "\<dots> = comp\<HH>.quotients ! (length \<HH> - 1 - 1)" unfolding comp\<HH>.quotients_def using length\<HH>big by fastforce
-        also have "\<dots> = comp\<HH>.quotients ! (length comp\<HH>.quotients - 1)" by (metis calculation comp\<HH>.quotients_length diff_add_inverse nat_add_commute)
-        also have "\<dots> = last comp\<HH>.quotients" by (metis last_conv_nth quots\<HH>notempty)
+        have "last comp\<GG>.quotients =  G Mod \<GG> ! (n - 1)" using length comp\<GG>.last_quotient unfolding n_def by auto
+        also have "\<dots> = G Mod \<HH> ! (m - 1)" using True by simp
+        also have "\<dots> = last comp\<HH>.quotients" using length\<HH>big comp\<HH>.last_quotient unfolding m_def by auto
         finally show ?thesis .
       qed
       from ltaken have ind:"multiset_of (map group.iso_class \<GG>butlast.quotients) = multiset_of (map group.iso_class \<HH>butlast.quotients)"
@@ -263,7 +255,10 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       
       -- {* Prove equality of those composition series. *}
       have "multiset_of (map group.iso_class comp\<GG>.quotients)
-              = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" sorry
+                    = multiset_of (map group.iso_class (\<GG>butlast.quotients @ [G Mod \<GG> ! (n - 1)]))"
+        
+      also have "\<dots> = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
+        sorry
       also have "\<dots> = multiset_of (map group.iso_class \<KK>.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" sorry
       also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)), group.iso_class (\<GG>Pn Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
       also have "\<dots> = multiset_of (map group.iso_class \<LL>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)), group.iso_class (\<GG>Pn Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
