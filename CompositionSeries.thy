@@ -669,51 +669,18 @@ next
   qed
 qed
 
-lemma remdups_adj_distinction:
-  assumes "length xs > 0"
-  shows "\<And>i. i + 1 < length (remdups_adj xs) \<Longrightarrow> (remdups_adj xs) ! i \<noteq> (remdups_adj xs) ! (i + 1)"
-using assms proof (induction xs)
-  case Nil
-  hence "False" by simp
-  thus "remdups_adj [] ! i \<noteq> remdups_adj [] ! (i + 1)"..
-next
-  case (Cons x xs)
-  hence "xs \<noteq> []" by (metis Divides.div_less Suc_eq_plus1 Zero_not_Suc div_eq_dividend_iff list.size(3,4) plus_nat.add_0 remdups_adj.simps(2))
-  then obtain y xs' where xs:"xs = y # xs'" by (metis list.exhaust)
-  from `xs \<noteq> []` have lenxs:"length xs > 0" by simp
-  from xs have rem:"remdups_adj (x # xs) = (if x = y then remdups_adj (y # xs') else x # remdups_adj (y # xs'))" using remdups_adj.simps(3) by auto
-  show "remdups_adj (x # xs) ! i \<noteq> remdups_adj (x # xs) ! (i + 1)"
-  proof (cases "x = y")
-    case True 
-    with rem xs have "remdups_adj (x # xs) = remdups_adj xs" by auto
-    moreover from lenxs have "remdups_adj xs ! i \<noteq> remdups_adj xs ! (i + 1)" by (metis Cons.IH Cons.prems(1) calculation)
-    ultimately show ?thesis by auto
-  next
-    case False
-    with rem xs have rem2:"remdups_adj (x # xs) = x # remdups_adj xs" by auto
-    show ?thesis
-    proof (cases i)
-      case 0
-      with rem2 have isx:"remdups_adj (x # xs) ! i = x" by auto
-      from 0 rem2 have "remdups_adj (x # xs) ! (i + 1) = remdups_adj xs ! 0"
-        by (metis One_nat_def Suc_eq_plus1 diff_Suc_less less_Suc0 nth_Cons_pos)
-      also have "\<dots> = remdups_adj (y # xs') ! 0" using xs by auto
-      also have "\<dots> = (y # remdups_adj (y # xs')) ! 0" by (metis nth_Cons' remdups_adj_Cons_alt)
-      also have "\<dots> = y" by simp
-      finally have "remdups_adj (x # xs) ! (i + 1) = y".
-      with False isx show "remdups_adj (x # xs) ! i \<noteq> remdups_adj (x # xs) ! (i + 1)" by auto
-    next
-      case (Suc j)
-      with rem2 have "remdups_adj (x # xs) ! i = (remdups_adj xs) ! j" by auto
-      from Cons(2) `i = Suc j` have "j + 1 < length (remdups_adj (x # xs)) - 1" by auto
-      also have "\<dots> \<le> length (remdups_adj xs) + 1 - 1" by (metis One_nat_def le_refl list.size(4) rem2)
-      also have "\<dots> = length (remdups_adj xs)" by simp
-      finally have "j + 1 < length (remdups_adj xs)".
-      with Cons.IH lenxs have "(remdups_adj xs) ! j \<noteq> (remdups_adj xs) ! (j + 1)" by auto
-      with rem2 `i = Suc j` show "remdups_adj (x # xs) ! i \<noteq> remdups_adj (x # xs) ! (i + 1)" by (metis Suc_eq_plus1 nth_Cons_Suc)
-    qed
-  qed
-qed
+(* TODO: This lemma will be there in future versions of List.thy *)
+
+lemma hd_remdups_adj[simp]: "hd (remdups_adj xs) = hd xs"
+  by (induction xs rule: remdups_adj.induct) simp_all
+
+(* This proof is due to Manuel Eberl *)
+lemma remdups_adj_adjacent:
+  "Suc i < length (remdups_adj xs) \<Longrightarrow> remdups_adj xs ! i \<noteq> remdups_adj xs ! Suc i"
+proof (induction xs arbitrary: i rule: remdups_adj.induct)
+  case (goal3 x y xs i)
+  thus ?case by (cases i, cases "x = y") (simp, auto simp: hd_conv_nth[symmetric])
+qed simp_all
 
 text {* Intersecting each entry of a composition series with a normal subgroup of $G$ and removing
   all adjacent duplicates yields another composition series. *}
@@ -827,7 +794,7 @@ next
     moreover from finGSi have "finite (carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>))" by auto
     ultimately have "K \<inter> \<GG> ! i = carrier (G\<lparr>carrier := K \<inter> \<GG> ! (i + 1)\<rparr>)" by (metis normal.fact_group_trivial_iff)
     hence "(remdups_adj (map (op \<inter> K) \<GG>)) ! j = (remdups_adj (map (op \<inter> K) \<GG>)) ! (j + 1)" using i by auto
-    with j have False using remdups_adj_distinction KGnotempty by (metis length_greater_0_conv)
+    with j have False using remdups_adj_adjacent KGnotempty Suc_eq_plus1 by metis
     thus "simple_group (G\<lparr>carrier := remdups_adj (map (op \<inter> K) \<GG>) ! Suc j\<rparr> Mod remdups_adj (map (op \<inter> K) \<GG>) ! j)"..
   next
     assume "\<GG> ! i <#> K \<inter> \<GG> ! Suc i = \<GG> ! Suc i"
