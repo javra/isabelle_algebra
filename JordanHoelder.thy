@@ -181,7 +181,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       finally show ?thesis .
     next
       case False 
-      def \<GG>Pnint\<HH>Pm \<equiv> "G\<lparr>carrier := \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)\<rparr>"
+      def \<HH>PmInt\<GG>Pn \<equiv> "G\<lparr>carrier := \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)\<rparr>"
       have \<GG>Pnmax:"max_normal_subgroup (\<GG> ! (n - 1)) G" unfolding n_def
         by (metis add_lessD1 diff_diff_add n'(3) nat_add_commute one_add_one 1(3) comp\<GG>.snd_to_last_max_normal)
       have \<HH>Pmmax:"max_normal_subgroup (\<HH> ! (m - 1)) G" unfolding m_def
@@ -189,10 +189,10 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       have \<HH>PmnormG:"\<HH> ! (m - 1) \<lhd> G" using comp\<HH>.normal_series_snd_to_last m'(4) unfolding m_def by auto
       have \<GG>PnnormG:"\<GG> ! (n - 1) \<lhd> G" using comp\<GG>.normal_series_snd_to_last n'(6) unfolding n_def by auto
       have \<HH>Pmint\<GG>PnnormG:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> G" using \<HH>PmnormG \<GG>PnnormG by (rule comp\<GG>.normal_subgroup_intersect)
-      have \<HH>Pmint\<GG>Pnnorm\<GG>pn:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> \<GG>Pn" using \<GG>PnnormG \<HH>PmnormG Int_lower2 unfolding \<GG>Pn_def
+      have Intnorm\<GG>Pn:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> \<GG>Pn" using \<GG>PnnormG \<HH>PmnormG Int_lower2 unfolding \<GG>Pn_def
         by (metis comp\<GG>.normal_restrict_supergroup comp\<GG>.normal_series_subgroups comp\<GG>.normal_subgroup_intersect n'(4))
       then interpret grp\<GG>PnMod\<HH>Pmint\<GG>Pn: group "\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)" by (rule normal.factorgroup_is_group)
-      have \<HH>Pmint\<GG>Pnnorm\<HH>Pm:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> \<HH>Pm" using \<HH>PmnormG \<GG>PnnormG Int_lower2 Int_commute unfolding \<HH>Pm_def
+      have Intnorm\<HH>Pm:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> \<HH>Pm" using \<HH>PmnormG \<GG>PnnormG Int_lower2 Int_commute unfolding \<HH>Pm_def
         by (metis comp\<GG>.normal_restrict_supergroup comp\<GG>.normal_subgroup_intersect comp\<HH>.normal_series_subgroups m'(6))
       then interpret grp\<HH>PmMod\<HH>Pmint\<GG>Pn: group "\<HH>Pm Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)" by (rule normal.factorgroup_is_group)
       
@@ -211,7 +211,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         using group.iso_sym grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group by auto
       moreover have "simple_group (G\<lparr>carrier := \<HH> ! (m - 1 + 1)\<rparr> Mod \<HH> ! (m - 1))" using comp\<HH>.simplefact m'(3) by simp
       hence "simple_group (G Mod \<HH> ! (m - 1))" using comp\<HH>.last last_conv_nth comp\<HH>.notempty m'(5) by fastforce
-      ultimately have "simple_group (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
+      ultimately have simple\<GG>PnModInt:"simple_group (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
         using simple_group.iso_simple grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group by auto
 
       -- {* Show analogues of the previous statements for $\<HH> ! (m - 1)$ instead of $\<GG> ! (n - 1)$. *}
@@ -221,15 +221,15 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       moreover have "\<HH> ! (m - 1) \<noteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1))" sorry
       ultimately have set_multG:"(\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1)) = carrier G" using \<HH>Pmmax \<GG>PnnormG comp\<GG>.normal_subgroup_setmult
         unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def by metis
-      from set_multG obtain \<psi> where \<psi>:"\<psi> \<in> (\<HH>Pm Mod (\<GG> ! (n - 1) \<inter> \<HH> ! (m - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<GG> ! (n - 1))"
+      from set_multG obtain \<psi> where "\<psi> \<in> (\<HH>Pm Mod (\<GG> ! (n - 1) \<inter> \<HH> ! (m - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<GG> ! (n - 1))"
         using second_isomorphism_grp.normal_intersection_quotient_isom \<GG>PnnormG \<HH>Pmmax normal_imp_subgroup
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def \<HH>Pm_def by metis
-      hence "\<psi> \<in> (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> (\<GG> ! (n - 1)))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<GG> ! (n - 1))" using Int_commute by metis
+      hence \<psi>:"\<psi> \<in> (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> (\<GG> ! (n - 1)))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<GG> ! (n - 1))" using Int_commute by metis
       then obtain \<psi>2 where \<psi>2:"\<psi>2 \<in> (G Mod \<GG> ! (n - 1)) \<cong> (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
         using group.iso_sym grp\<HH>PmMod\<HH>Pmint\<GG>Pn.is_group by auto
       moreover have "simple_group (G\<lparr>carrier := \<GG> ! (n - 1 + 1)\<rparr> Mod \<GG> ! (n - 1))" using comp\<GG>.simplefact n'(3) by simp
       hence "simple_group (G Mod \<GG> ! (n - 1))" using comp\<GG>.last last_conv_nth comp\<GG>.notempty n'(7) by fastforce
-      ultimately have "simple_group (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))" 
+      ultimately have simple\<HH>PmModInt:"simple_group (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))" 
         using simple_group.iso_simple grp\<HH>PmMod\<HH>Pmint\<GG>Pn.is_group by auto      
       
       -- {* Instantiate several composition series used to build up the equality of quotient multisets. *}
@@ -243,19 +243,23 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         using  "1.hyps" grp\<HH>Pm.is_group finHbl \<HH>butlast.is_composition_series \<KK>.is_composition_series sorry (* UGH!!! *)
       hence length\<KK>:"m = length \<KK>" using \<HH>butlast.quotients_length \<KK>.quotients_length length_map size_multiset_of ltakem by metis
       hence  "length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<KK>" using m'(4) length\<HH>big by auto
-      moreover have "\<GG>Pnint\<HH>Pm = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" sorry
-      ultimately interpret \<KK>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<KK> - 1) \<KK>" using \<KK>.composition_series_prefix_closed by metis
+      moreover have "\<HH>PmInt\<GG>Pn = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" sorry
+      ultimately interpret \<KK>butlast: composition_series \<HH>PmInt\<GG>Pn "take (length \<KK> - 1) \<KK>" using \<KK>.composition_series_prefix_closed by metis
 
       from n'(2) have "Suc (length (take n \<GG>)) \<le> length \<GG>" by auto
       hence multisets\<GG>butlast\<LL>:"multiset_of (map group.iso_class \<GG>butlast.quotients) = multiset_of (map group.iso_class \<LL>.quotients)"
         using  "1.hyps" grp\<GG>Pn.is_group finGbl \<GG>butlast.is_composition_series \<LL>.is_composition_series by metis
       hence length\<LL>:"n = length \<LL>" using \<GG>butlast.quotients_length \<LL>.quotients_length length_map size_multiset_of ltaken by metis
       hence "length \<LL> - 1 > 0" "length \<LL> - 1 \<le> length \<LL>" using n'(6) length by auto
-      moreover have "\<GG>Pnint\<HH>Pm = (\<GG>Pn\<lparr>carrier := \<LL> ! (length \<LL> - 1 - 1)\<rparr>)" sorry
-      ultimately interpret \<LL>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<LL> - 1) \<LL>" using \<LL>.composition_series_prefix_closed by metis
+      moreover have "\<HH>PmInt\<GG>Pn = (\<GG>Pn\<lparr>carrier := \<LL> ! (length \<LL> - 1 - 1)\<rparr>)" sorry
+      ultimately interpret \<LL>butlast: composition_series \<HH>PmInt\<GG>Pn "take (length \<LL> - 1) \<LL>" using \<LL>.composition_series_prefix_closed by metis
 
-      interpret \<KK>butlastadd\<GG>Pn: composition_series \<GG>Pn "(take (length \<KK> - 1) \<KK>) @ [\<GG> ! (n - 1)]" sorry
-      interpret \<LL>butlastadd\<HH>Pm: composition_series \<HH>Pm "(take (length \<LL> - 1) \<LL>) @ [\<HH> ! (m - 1)]" sorry
+      interpret \<KK>butlastadd\<GG>Pn: composition_series \<GG>Pn "(take (length \<KK> - 1) \<KK>) @ [\<GG> ! (n - 1)]"
+        using grp\<GG>Pn.composition_series_extend \<KK>butlast.is_composition_series simple\<GG>PnModInt Intnorm\<GG>Pn
+        unfolding \<GG>Pn_def \<HH>PmInt\<GG>Pn_def by auto
+      interpret \<LL>butlastadd\<HH>Pm: composition_series \<HH>Pm "(take (length \<LL> - 1) \<LL>) @ [\<HH> ! (m - 1)]"
+        using grp\<HH>Pm.composition_series_extend \<LL>butlast.is_composition_series simple\<HH>PmModInt Intnorm\<HH>Pm
+        unfolding \<HH>Pm_def \<HH>PmInt\<GG>Pn_def by auto
       
       -- {* Prove equality of those composition series. *}
       have "multiset_of (map group.iso_class comp\<GG>.quotients)

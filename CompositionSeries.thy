@@ -251,7 +251,7 @@ proof -
   with assms have HG:"H \<lhd> G" by (metis pq_order_subgrp_normal)
   then interpret groupH: group "G\<lparr>carrier := H\<rparr>" unfolding normal_def by (metis subgroup_imp_group)
   have "normal_series (G\<lparr>carrier := H\<rparr>) [{\<one>}, H]"  using groupH.trivial_normal_series by auto
-  with HG show ?thesis unfolding H_def by (metis append_Cons append_Nil expand_normal_series)
+  with HG show ?thesis unfolding H_def by (metis append_Cons append_Nil normal_series_extend)
 qed
 
 text {* The following defines the list of all quotient groups of the normal_series: *}
