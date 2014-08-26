@@ -134,7 +134,7 @@ text {* We can construct new normal series by expanding existing ones: If we
 append the carrier of a group @{term G} to a normal series for a normal subgroup
 @{term "H \<lhd> G"} we receive a normal series for @{term G}. *}
 
-lemma (in group) expand_normal_series:
+lemma (in group) normal_series_extend:
   assumes normal:"normal_series (G\<lparr>carrier := H\<rparr>) \<HH>"
   assumes HG:"H \<lhd> G"
   shows "normal_series G (\<HH> @ [carrier G])"
@@ -806,14 +806,14 @@ next
   qed
 qed
 
-lemma (in group) extend:
+lemma (in group) composition_series_extend:
   assumes "composition_series (G\<lparr>carrier := H\<rparr>) \<HH>"
   assumes "simple_group (G Mod H)" "H \<lhd> G"
   shows "composition_series G (\<HH> @ [carrier G])"
 unfolding composition_series_def composition_series_axioms_def
 proof auto
   from assms(1) interpret comp\<HH>: composition_series "G\<lparr>carrier := H\<rparr>" \<HH> .
-  show "normal_series G (\<HH> @ [carrier G])" using  assms(3) comp\<HH>.is_normal_series by (metis expand_normal_series)
+  show "normal_series G (\<HH> @ [carrier G])" using  assms(3) comp\<HH>.is_normal_series by (metis normal_series_extend)
   fix i
   assume i:"i < length \<HH>"
   show "simple_group (G\<lparr>carrier := (\<HH> @ [carrier G]) ! Suc i\<rparr> Mod (\<HH> @ [carrier G]) ! i)"
