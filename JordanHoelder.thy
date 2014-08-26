@@ -266,14 +266,10 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
                     = multiset_of (map group.iso_class ((butlast comp\<GG>.quotients) @ [last comp\<GG>.quotients]))" using quots\<GG>notempty by simp
       also have "\<dots> = multiset_of (map group.iso_class (\<GG>butlast.quotients @ [G Mod \<GG> ! (n - 1)]))"
         using comp\<GG>.quotients_butlast comp\<GG>.last_quotient length unfolding n_def \<GG>Pn_def by auto
-      also have "\<dots> = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" by simp
-      also have "\<dots> = multiset_of (map group.iso_class \<LL>.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" using multisets\<GG>butlast\<LL> by simp
       also have "\<dots> = multiset_of (map group.iso_class ((butlast \<LL>.quotients) @ [last \<LL>.quotients])) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
-        using quots\<LL>notemtpy by simp
+        using multisets\<GG>butlast\<LL> quots\<LL>notemtpy by simp
       also have "\<dots> = multiset_of (map group.iso_class (\<LL>butlast.quotients @ [\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)])) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
         using \<LL>.quotients_butlast \<LL>.last_quotient `length \<LL> > 1` \<LL>sndlast Inteq\<LL>sndlast unfolding n_def by auto
-      also have "\<dots> = multiset_of (map group.iso_class \<LL>butlast.quotients) + {# group.iso_class (\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)) #} + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
-        by simp
       also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)) #} + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
       proof -
         from finGbl have finInt:"finite (carrier \<HH>PmInt\<GG>Pn)" unfolding \<HH>PmInt\<GG>Pn_def \<GG>Pn_def by simp
@@ -285,13 +281,10 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         by metis
       also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (\<HH>Pm Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)) #} + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}"
         by (metis add_eq_conv_ex)
-      also have "\<dots> = multiset_of (map group.iso_class (\<KK>butlast.quotients @ [\<HH>Pm Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)])) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}"
-        by simp
       also have "\<dots> = multiset_of (map group.iso_class ((butlast \<KK>.quotients) @ [last \<KK>.quotients])) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}"
         using \<KK>.quotients_butlast \<KK>.last_quotient `length \<KK> > 1` \<KK>sndlast Inteq\<KK>sndlast unfolding m_def by auto
-      also have "\<dots> = multiset_of (map group.iso_class \<KK>.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" using quots\<KK>notemtpy by simp
-      also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" using multisets\<HH>butlast\<KK> by simp
-      also have "\<dots> = multiset_of (map group.iso_class (\<HH>butlast.quotients @ [G Mod \<HH> ! (m - 1)]))" by simp
+      also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}"
+        using multisets\<HH>butlast\<KK> quots\<KK>notemtpy by simp
       also have "\<dots> = multiset_of (map group.iso_class ((butlast comp\<HH>.quotients) @ [last comp\<HH>.quotients]))"
         using comp\<HH>.quotients_butlast comp\<HH>.last_quotient length\<HH>big unfolding m_def \<HH>Pm_def by auto
       also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" using quots\<HH>notempty by simp
