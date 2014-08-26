@@ -125,9 +125,10 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     ultimately have length\<HH>big:"length \<HH> \<ge> 3" using comp\<HH>.notempty by arith
     def m \<equiv> "length \<HH> - 1"
     def n \<equiv> "length \<GG> - 1"
-    from length\<HH>big have m':"m > 0" "m < length \<HH>" "(m - 1) + 1 < length \<HH>" "m - 1 = length \<HH> - 2" unfolding m_def by auto
+    from length\<HH>big have m':"m > 0" "m < length \<HH>" "(m - 1) + 1 < length \<HH>" "m - 1 = length \<HH> - 2" "m - 1 + 1 = length \<HH> - 1" "m - 1 < length \<HH>"
+      unfolding m_def by auto
     from length have n':"n > 0" "n < length \<GG>" "(n - 1) + 1 < length \<GG>" "n - 1 < length \<GG>" "Suc n \<le> length \<GG>"
-      unfolding n_def by auto
+     "n - 1 = length \<GG> - 2" "n - 1 + 1 = length \<GG> - 1"  unfolding n_def by auto
     def \<GG>Pn \<equiv> "G\<lparr>carrier := \<GG> ! (n - 1)\<rparr>"
     def \<HH>Pm \<equiv> "G\<lparr>carrier := \<HH> ! (m - 1)\<rparr>"
     then interpret grp\<GG>Pn: group \<GG>Pn unfolding \<GG>Pn_def using n' by (metis comp\<GG>.normal_series_subgroups comp\<GG>.subgroup_imp_group)
@@ -180,32 +181,66 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" using append_butlast_last_id quots\<HH>notempty by simp
       finally show ?thesis .
     next
-      case False      
-      have GPnmax:"max_normal_subgroup (\<GG> ! (n - 1)) G" unfolding n_def
+      case False 
+      def \<GG>Pnint\<HH>Pm \<equiv> "G\<lparr>carrier := \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)\<rparr>"
+      have \<GG>Pnmax:"max_normal_subgroup (\<GG> ! (n - 1)) G" unfolding n_def
         by (metis add_lessD1 diff_diff_add n'(3) nat_add_commute one_add_one 1(3) comp\<GG>.snd_to_last_max_normal)
-      have HPmmax:"max_normal_subgroup (\<HH> ! (m - 1)) G" unfolding m_def
+      have \<HH>Pmmax:"max_normal_subgroup (\<HH> ! (m - 1)) G" unfolding m_def
         by (metis add_lessD1 diff_diff_add m'(3) nat_add_commute one_add_one 1(3) comp\<HH>.snd_to_last_max_normal)
-      have HPmnormG:"(\<HH> ! (m - 1)) \<lhd> G" using comp\<HH>.normal_series_snd_to_last m'(4) unfolding m_def by auto
-      have "\<GG> ! (n - 1) \<subseteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1))"
-        using second_isomorphism_grp.H_contained_in_set_mult GPnmax HPmnormG normal_imp_subgroup
+      have \<HH>PmnormG:"\<HH> ! (m - 1) \<lhd> G" using comp\<HH>.normal_series_snd_to_last m'(4) unfolding m_def by auto
+      have \<GG>PnnormG:"\<GG> ! (n - 1) \<lhd> G" using comp\<GG>.normal_series_snd_to_last n'(6) unfolding n_def by auto
+      have \<HH>Pmint\<GG>PnnormG:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> G" using \<HH>PmnormG \<GG>PnnormG by (rule comp\<GG>.normal_subgroup_intersect)
+      have \<HH>Pmint\<GG>Pnnorm\<GG>pn:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> \<GG>Pn" using \<GG>PnnormG \<HH>PmnormG Int_lower2 unfolding \<GG>Pn_def
+        by (metis comp\<GG>.normal_restrict_supergroup comp\<GG>.normal_series_subgroups comp\<GG>.normal_subgroup_intersect n'(4))
+      then interpret grp\<GG>PnMod\<HH>Pmint\<GG>Pn: group "\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)" by (rule normal.factorgroup_is_group)
+      have \<HH>Pmint\<GG>Pnnorm\<HH>Pm:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> \<HH>Pm" using \<HH>PmnormG \<GG>PnnormG Int_lower2 Int_commute unfolding \<HH>Pm_def
+        by (metis comp\<GG>.normal_restrict_supergroup comp\<GG>.normal_subgroup_intersect comp\<HH>.normal_series_subgroups m'(6))
+      then interpret grp\<HH>PmMod\<HH>Pmint\<GG>Pn: group "\<HH>Pm Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)" by (rule normal.factorgroup_is_group)
+      
+      -- {* Show that $G / \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))$ is a simple group. *}
+
+      have "\<GG> ! (n - 1) \<subseteq> (\<HH> ! (m - 1)) <#>\<^bsub>G\<^esub> (\<GG> ! (n - 1))"
+        using second_isomorphism_grp.S_contained_in_set_mult \<GG>Pnmax \<HH>PmnormG normal_imp_subgroup
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def by metis
-      moreover have "\<GG> ! (n - 1) \<noteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> \<HH> ! (m - 1)" sorry
-      ultimately have "(\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1)) = carrier G" using GPnmax HPmnormG comp\<GG>.normal_subgroup_setmult
+      moreover have "\<GG> ! (n - 1) \<noteq> (\<HH> ! (m - 1)) <#>\<^bsub>G\<^esub> (\<GG> ! (n - 1))" sorry
+      ultimately have set_multG:"(\<HH> ! (m - 1)) <#>\<^bsub>G\<^esub> (\<GG> ! (n - 1)) = carrier G" using \<GG>Pnmax \<HH>PmnormG comp\<GG>.normal_subgroup_setmult
         unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def by metis
-      then obtain \<phi> where "\<phi> \<in> (G Mod \<HH> ! (m - 1)) \<cong> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
-        sorry
-      moreover have "group (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr> Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))" sorry
-      moreover have "simple_group (G Mod \<HH> ! (m - 1))" using comp\<HH>.simplefact sorry
-      ultimately have "simple_group (G\<lparr>carrier := \<GG> ! (n - 1)\<rparr> Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
-        using simple_group.iso_simple by auto
+      then obtain \<phi> where \<phi>:"\<phi> \<in> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<HH> ! (m - 1))"
+        using second_isomorphism_grp.normal_intersection_quotient_isom \<HH>PmnormG \<GG>Pnmax normal_imp_subgroup
+        unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def \<GG>Pn_def by metis
+      then obtain \<phi>2 where \<phi>2:"\<phi>2 \<in> (G Mod \<HH> ! (m - 1)) \<cong> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
+        using group.iso_sym grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group by auto
+      moreover have "simple_group (G\<lparr>carrier := \<HH> ! (m - 1 + 1)\<rparr> Mod \<HH> ! (m - 1))" using comp\<HH>.simplefact m'(3) by simp
+      hence "simple_group (G Mod \<HH> ! (m - 1))" using comp\<HH>.last last_conv_nth comp\<HH>.notempty m'(5) by fastforce
+      ultimately have "simple_group (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
+        using simple_group.iso_simple grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group by auto
+
+      -- {* Show analogues of the previous statements for $\<HH> ! (m - 1)$ instead of $\<GG> ! (n - 1)$. *}
+      have "\<HH> ! (m - 1) \<subseteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1))"
+        using second_isomorphism_grp.S_contained_in_set_mult \<GG>Pnmax \<HH>PmnormG normal_imp_subgroup
+        unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def by metis
+      moreover have "\<HH> ! (m - 1) \<noteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1))" sorry
+      ultimately have set_multG:"(\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1)) = carrier G" using \<HH>Pmmax \<GG>PnnormG comp\<GG>.normal_subgroup_setmult
+        unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def by metis
+      from set_multG obtain \<psi> where \<psi>:"\<psi> \<in> (\<HH>Pm Mod (\<GG> ! (n - 1) \<inter> \<HH> ! (m - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<GG> ! (n - 1))"
+        using second_isomorphism_grp.normal_intersection_quotient_isom \<GG>PnnormG \<HH>Pmmax normal_imp_subgroup
+        unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def \<HH>Pm_def by metis
+      hence "\<psi> \<in> (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> (\<GG> ! (n - 1)))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<GG> ! (n - 1))" using Int_commute by metis
+      then obtain \<psi>2 where \<psi>2:"\<psi>2 \<in> (G Mod \<GG> ! (n - 1)) \<cong> (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
+        using group.iso_sym grp\<HH>PmMod\<HH>Pmint\<GG>Pn.is_group by auto
+      moreover have "simple_group (G\<lparr>carrier := \<GG> ! (n - 1 + 1)\<rparr> Mod \<GG> ! (n - 1))" using comp\<GG>.simplefact n'(3) by simp
+      hence "simple_group (G Mod \<GG> ! (n - 1))" using comp\<GG>.last last_conv_nth comp\<GG>.notempty n'(7) by fastforce
+      ultimately have "simple_group (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))" 
+        using simple_group.iso_simple grp\<HH>PmMod\<HH>Pmint\<GG>Pn.is_group by auto      
       
       -- {* Instantiate several composition series used to build up the equality of quotient multisets. *}
-      def \<GG>Pnint\<HH>Pm \<equiv> "G\<lparr>carrier := \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)\<rparr>"
       def \<KK> \<equiv> "remdups_adj (map (op \<inter> (\<HH> ! (m - 1))) \<GG>)"
       def \<LL> \<equiv> "remdups_adj (map (op \<inter> (\<GG> ! (n - 1))) \<HH>)"
-      interpret \<KK>: composition_series \<GG>Pn \<KK> sorry
-      interpret \<LL>: composition_series \<HH>Pm \<LL> sorry
-      interpret \<KK>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<KK> - 1) \<KK>" sorry
+      interpret \<KK>: composition_series \<HH>Pm \<KK> using comp\<GG>.intersect_normal 1(3) \<HH>PmnormG unfolding \<KK>_def \<HH>Pm_def by auto
+      interpret \<LL>: composition_series \<GG>Pn \<LL> using comp\<HH>.intersect_normal 1(3) \<GG>PnnormG unfolding \<LL>_def \<GG>Pn_def by auto
+      have "\<GG>Pnint\<HH>Pm = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" "length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<KK>" sorry
+      then interpret \<KK>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<KK> - 1) \<KK>" using \<KK>.composition_series_prefix_closed by metis
+      
       interpret \<LL>butlast: composition_series \<GG>Pnint\<HH>Pm "take (length \<LL> - 1) \<LL>" sorry
       interpret \<KK>butlastadd\<GG>Pn: composition_series \<GG>Pn "(take (length \<KK> - 1) \<KK>) @ [\<GG> ! (n - 1)]" sorry
       interpret \<LL>butlastadd\<HH>Pm: composition_series \<HH>Pm "(take (length \<LL> - 1) \<LL>) @ [\<HH> ! (m - 1)]" sorry
@@ -235,7 +270,7 @@ proof -
   also have "\<dots> = length (map group.iso_class comp\<GG>.quotients) + 1" by (metis length_map)
   also have "\<dots> = size (multiset_of (map group.iso_class comp\<GG>.quotients)) + 1" by (metis size_multiset_of)
   also have "\<dots> = size (multiset_of (map group.iso_class comp\<HH>.quotients)) + 1"
-    using jordan_hoelder_multisets
+    using jordan_hoelder_multisets is_group finite is_composition_series comp\<HH>.is_composition_series by metis
   also have "\<dots> = length (map group.iso_class comp\<HH>.quotients) + 1" by (metis size_multiset_of)
   also have "\<dots> = length comp\<HH>.quotients + 1" by (metis length_map)
   also have "\<dots> = length \<HH>" by (metis comp\<HH>.quotients_length)
