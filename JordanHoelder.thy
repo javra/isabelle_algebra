@@ -196,15 +196,17 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       moreover have "\<GG> ! (n - 1) \<noteq> (\<HH> ! (m - 1)) <#>\<^bsub>G\<^esub> (\<GG> ! (n - 1))" sorry
       ultimately have set_multG:"(\<HH> ! (m - 1)) <#>\<^bsub>G\<^esub> (\<GG> ! (n - 1)) = carrier G" using \<GG>Pnmax \<HH>PmnormG comp\<GG>.normal_subgroup_setmult
         unfolding max_normal_subgroup_def max_normal_subgroup_axioms_def by metis
-      then obtain \<phi> where \<phi>:"\<phi> \<in> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<HH> ! (m - 1))"
+      then obtain \<phi> where "\<phi> \<in> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<HH> ! (m - 1))"
         using second_isomorphism_grp.normal_intersection_quotient_isom \<HH>PmnormG \<GG>Pnmax normal_imp_subgroup
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def \<GG>Pn_def by metis
+      hence \<phi>:"\<phi> \<in> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))) \<cong> (G Mod \<HH> ! (m - 1))" by auto
       then obtain \<phi>2 where \<phi>2:"\<phi>2 \<in> (G Mod \<HH> ! (m - 1)) \<cong> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
         using group.iso_sym grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group by auto
       moreover have "simple_group (G\<lparr>carrier := \<HH> ! (m - 1 + 1)\<rparr> Mod \<HH> ! (m - 1))" using comp\<HH>.simplefact m'(3) by simp
       hence "simple_group (G Mod \<HH> ! (m - 1))" using comp\<HH>.last last_conv_nth comp\<HH>.notempty m'(5) by fastforce
       ultimately have simple\<GG>PnModInt:"simple_group (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))"
         using simple_group.iso_simple grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group by auto
+      interpret grpGMod\<HH>Pm: group "(G Mod \<HH> ! (m - 1))" by (metis \<HH>PmnormG normal.factorgroup_is_group)
 
       -- {* Show analogues of the previous statements for $\<HH> ! (m - 1)$ instead of $\<GG> ! (n - 1)$. *}
       have "\<HH> ! (m - 1) \<subseteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1))"
@@ -222,9 +224,11 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       moreover have "simple_group (G\<lparr>carrier := \<GG> ! (n - 1 + 1)\<rparr> Mod \<GG> ! (n - 1))" using comp\<GG>.simplefact n'(3) by simp
       hence "simple_group (G Mod \<GG> ! (n - 1))" using comp\<GG>.last last_conv_nth comp\<GG>.notempty n'(7) by fastforce
       ultimately have simple\<HH>PmModInt:"simple_group (\<HH>Pm Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)))" 
-        using simple_group.iso_simple grp\<HH>PmMod\<HH>Pmint\<GG>Pn.is_group by auto      
+        using simple_group.iso_simple grp\<HH>PmMod\<HH>Pmint\<GG>Pn.is_group by auto
+      interpret grpGMod\<GG>Pn: group "(G Mod \<GG> ! (n - 1))" by (metis \<GG>PnnormG normal.factorgroup_is_group)
       
       -- {* Instantiate several composition series used to build up the equality of quotient multisets. *}
+
       def \<KK> \<equiv> "remdups_adj (map (op \<inter> (\<HH> ! (m - 1))) \<GG>)"
       def \<LL> \<equiv> "remdups_adj (map (op \<inter> (\<GG> ! (n - 1))) \<HH>)"
       interpret \<KK>: composition_series \<HH>Pm \<KK> using comp\<GG>.intersect_normal 1(3) \<HH>PmnormG unfolding \<KK>_def \<HH>Pm_def by auto
@@ -234,17 +238,21 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       hence multisets\<HH>butlast\<KK>:"multiset_of (map group.iso_class \<HH>butlast.quotients) = multiset_of (map group.iso_class \<KK>.quotients)"
         using  "1.hyps" grp\<HH>Pm.is_group finHbl \<HH>butlast.is_composition_series \<KK>.is_composition_series sorry (* UGH!!! *)
       hence length\<KK>:"m = length \<KK>" using \<HH>butlast.quotients_length \<KK>.quotients_length length_map size_multiset_of ltakem by metis
-      hence  "length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<KK>" using m'(4) length\<HH>big by auto
-      moreover have "\<HH>PmInt\<GG>Pn = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" sorry
+      hence  "length \<KK> > 1" "length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<KK>" using m'(4) length\<HH>big by auto
+      moreover have \<KK>sndlast:"\<HH>PmInt\<GG>Pn = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" sorry
       ultimately interpret \<KK>butlast: composition_series \<HH>PmInt\<GG>Pn "take (length \<KK> - 1) \<KK>" using \<KK>.composition_series_prefix_closed by metis
+      from `length \<KK> > 1` have quots\<KK>notemtpy:"\<KK>.quotients \<noteq> []" unfolding \<KK>.quotients_def by auto
+      from \<KK>sndlast have Inteq\<KK>sndlast:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) = \<KK> ! (length \<KK> - 1 - 1)" unfolding \<HH>PmInt\<GG>Pn_def \<GG>Pn_def \<LL>_def sorry
 
       from n'(2) have "Suc (length (take n \<GG>)) \<le> length \<GG>" by auto
       hence multisets\<GG>butlast\<LL>:"multiset_of (map group.iso_class \<GG>butlast.quotients) = multiset_of (map group.iso_class \<LL>.quotients)"
         using  "1.hyps" grp\<GG>Pn.is_group finGbl \<GG>butlast.is_composition_series \<LL>.is_composition_series by metis
       hence length\<LL>:"n = length \<LL>" using \<GG>butlast.quotients_length \<LL>.quotients_length length_map size_multiset_of ltaken by metis
-      hence "length \<LL> - 1 > 0" "length \<LL> - 1 \<le> length \<LL>" using n'(6) length by auto
-      moreover have "\<HH>PmInt\<GG>Pn = (\<GG>Pn\<lparr>carrier := \<LL> ! (length \<LL> - 1 - 1)\<rparr>)" sorry
+      hence "length \<LL> > 1" "length \<LL> - 1 > 0" "length \<LL> - 1 \<le> length \<LL>" using n'(6) length by auto
+      moreover have \<LL>sndlast:"\<HH>PmInt\<GG>Pn = (\<GG>Pn\<lparr>carrier := \<LL> ! (length \<LL> - 1 - 1)\<rparr>)" sorry
       ultimately interpret \<LL>butlast: composition_series \<HH>PmInt\<GG>Pn "take (length \<LL> - 1) \<LL>" using \<LL>.composition_series_prefix_closed by metis
+      from `length \<LL> > 1` have quots\<LL>notemtpy:"\<LL>.quotients \<noteq> []" unfolding \<LL>.quotients_def by auto
+      from \<LL>sndlast have Inteq\<LL>sndlast:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) = \<LL> ! (length \<LL> - 1 - 1)" unfolding \<HH>PmInt\<GG>Pn_def \<GG>Pn_def \<LL>_def sorry
 
       interpret \<KK>butlastadd\<GG>Pn: composition_series \<GG>Pn "(take (length \<KK> - 1) \<KK>) @ [\<GG> ! (n - 1)]"
         using grp\<GG>Pn.composition_series_extend \<KK>butlast.is_composition_series simple\<GG>PnModInt Intnorm\<GG>Pn
@@ -255,17 +263,38 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       
       -- {* Prove equality of those composition series. *}
       have "multiset_of (map group.iso_class comp\<GG>.quotients)
-                    = multiset_of (map group.iso_class (\<GG>butlast.quotients @ [G Mod \<GG> ! (n - 1)]))"
-        
-      also have "\<dots> = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
-        sorry
-      also have "\<dots> = multiset_of (map group.iso_class \<KK>.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" sorry
-      also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)), group.iso_class (\<GG>Pn Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
-      also have "\<dots> = multiset_of (map group.iso_class \<LL>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)), group.iso_class (\<GG>Pn Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
-      also have "\<dots> = multiset_of (map group.iso_class \<LL>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)), group.iso_class (\<HH>Pm Mod \<GG> ! (n - 1) \<inter> \<HH> ! (m - 1)) #}" sorry
-      also have "\<dots> = multiset_of (map group.iso_class \<LL>.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" sorry
-      also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" sorry
-      also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" sorry
+                    = multiset_of (map group.iso_class ((butlast comp\<GG>.quotients) @ [last comp\<GG>.quotients]))" using quots\<GG>notempty by simp
+      also have "\<dots> = multiset_of (map group.iso_class (\<GG>butlast.quotients @ [G Mod \<GG> ! (n - 1)]))"
+        using comp\<GG>.quotients_butlast comp\<GG>.last_quotient length unfolding n_def \<GG>Pn_def by auto
+      also have "\<dots> = multiset_of (map group.iso_class \<GG>butlast.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" by simp
+      also have "\<dots> = multiset_of (map group.iso_class \<LL>.quotients) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}" using multisets\<GG>butlast\<LL> by simp
+      also have "\<dots> = multiset_of (map group.iso_class ((butlast \<LL>.quotients) @ [last \<LL>.quotients])) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
+        using quots\<LL>notemtpy by simp
+      also have "\<dots> = multiset_of (map group.iso_class (\<LL>butlast.quotients @ [\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)])) + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
+        using \<LL>.quotients_butlast \<LL>.last_quotient `length \<LL> > 1` \<LL>sndlast Inteq\<LL>sndlast unfolding n_def by auto
+      also have "\<dots> = multiset_of (map group.iso_class \<LL>butlast.quotients) + {# group.iso_class (\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)) #} + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
+        by simp
+      also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (\<GG>Pn Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)) #} + {# group.iso_class (G Mod \<GG> ! (n - 1)) #}"
+      proof -
+        from finGbl have finInt:"finite (carrier \<HH>PmInt\<GG>Pn)" unfolding \<HH>PmInt\<GG>Pn_def \<GG>Pn_def by simp
+        moreover have "Suc (length (take (length \<LL> - 1) \<LL>)) \<le> length \<GG>" using length\<LL> unfolding n_def using n'(2) by auto
+        ultimately show ?thesis using "1.hyps" \<KK>butlast.is_group \<KK>butlast.is_composition_series \<LL>butlast.is_composition_series by auto
+      qed
+      also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #} + {# group.iso_class (\<HH>Pm Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)) #}"
+        using \<phi> \<psi>2 iso_classes_iff grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group grpGMod\<HH>Pm.is_group grpGMod\<GG>Pn.is_group grp\<HH>PmMod\<HH>Pmint\<GG>Pn.is_group
+        by metis
+      also have "\<dots> = multiset_of (map group.iso_class \<KK>butlast.quotients) + {# group.iso_class (\<HH>Pm Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)) #} + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}"
+        by (metis add_eq_conv_ex)
+      also have "\<dots> = multiset_of (map group.iso_class (\<KK>butlast.quotients @ [\<HH>Pm Mod \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)])) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}"
+        by simp
+      also have "\<dots> = multiset_of (map group.iso_class ((butlast \<KK>.quotients) @ [last \<KK>.quotients])) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}"
+        using \<KK>.quotients_butlast \<KK>.last_quotient `length \<KK> > 1` \<KK>sndlast Inteq\<KK>sndlast unfolding m_def by auto
+      also have "\<dots> = multiset_of (map group.iso_class \<KK>.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" using quots\<KK>notemtpy by simp
+      also have "\<dots> = multiset_of (map group.iso_class \<HH>butlast.quotients) + {# group.iso_class (G Mod \<HH> ! (m - 1)) #}" using multisets\<HH>butlast\<KK> by simp
+      also have "\<dots> = multiset_of (map group.iso_class (\<HH>butlast.quotients @ [G Mod \<HH> ! (m - 1)]))" by simp
+      also have "\<dots> = multiset_of (map group.iso_class ((butlast comp\<HH>.quotients) @ [last comp\<HH>.quotients]))"
+        using comp\<HH>.quotients_butlast comp\<HH>.last_quotient length\<HH>big unfolding m_def \<HH>Pm_def by auto
+      also have "\<dots> = multiset_of (map group.iso_class comp\<HH>.quotients)" using quots\<HH>notempty by simp
       finally show ?thesis .
     qed
   qed
