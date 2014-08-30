@@ -855,7 +855,6 @@ using assms proof (induction "j - i" arbitrary: i j)
   hence "i = j" by auto
   thus "\<GG> ! i \<subseteq> \<GG> ! j" by auto
 next
-  print_cases
   case (Suc k i j)
   hence i':"i + (Suc k) = j" "i + 1 < length \<GG>" by auto
   hence ij:"i + 1 \<le> j" by auto
