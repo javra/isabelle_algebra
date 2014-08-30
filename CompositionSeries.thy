@@ -847,4 +847,22 @@ proof auto
   qed
 qed
 
+lemma (in composition_series) entries_mono:
+  assumes "i \<le> j" "j < length \<GG>"
+  shows "\<GG> ! i \<subseteq> \<GG> ! j"
+using assms proof (induction "j - i" arbitrary: i j)
+  case 0
+  hence "i = j" by auto
+  thus "\<GG> ! i \<subseteq> \<GG> ! j" by auto
+next
+  print_cases
+  case (Suc k i j)
+  hence i':"i + (Suc k) = j" "i + 1 < length \<GG>" by auto
+  hence ij:"i + 1 \<le> j" by auto
+  have "\<GG> ! i \<subseteq> \<GG> ! (i + 1)" using i' normal normal_imp_subgroup subgroup_imp_subset by force
+  moreover have "j - (i + 1) = k" "j < length \<GG>" using Suc assms by auto
+  hence "\<GG> ! (i + 1) \<subseteq> \<GG> ! j" using Suc(1) ij by auto
+  ultimately show "\<GG> ! i \<subseteq> \<GG> ! j" by simp
+qed
+
 end
