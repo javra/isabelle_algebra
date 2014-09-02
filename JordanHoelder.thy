@@ -242,10 +242,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       def \<LL> \<equiv> "remdups_adj (map (op \<inter> (\<GG> ! (n - 1))) \<HH>)"
       interpret \<KK>: composition_series \<HH>Pm \<KK> using comp\<GG>.intersect_normal 1(3) \<HH>PmnormG unfolding \<KK>_def \<HH>Pm_def by auto
       interpret \<LL>: composition_series \<GG>Pn \<LL> using comp\<HH>.intersect_normal 1(3) \<GG>PnnormG unfolding \<LL>_def \<GG>Pn_def by auto
-      have "length \<KK> - 1 > 0" "\<HH>PmInt\<GG>Pn = G\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>" sorry (* das muss irgendwie weiter runter *)
-      then interpret \<KK>butlast: composition_series \<HH>PmInt\<GG>Pn "take (length \<KK> - 1) \<KK>"
-        using \<KK>.composition_series_prefix_closed
-        sorry
+
 
       -- {* Apply the induction hypothesis on \<GG>butlast and \<LL> *}
       from n'(2) have "Suc (length (take n \<GG>)) \<le> length \<GG>" by auto
@@ -273,17 +270,16 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       from `length \<LL> > 1` have quots\<LL>notemtpy:"\<LL>.quotients \<noteq> []" unfolding \<LL>.quotients_def by auto
 
       -- {* Apply the induction hypothesis on \<LL>butlast and \<KK>butlast *}
-      from finGbl have finInt:"finite (carrier \<HH>PmInt\<GG>Pn)" unfolding \<HH>PmInt\<GG>Pn_def \<GG>Pn_def by simp
-      moreover have "Suc (length (take (length \<LL> - 1) \<LL>)) \<le> length \<GG>" using length\<LL> unfolding n_def using n'(2) by auto
-      ultimately have multisets\<KK>\<LL>butlast:"multiset_of (map group.iso_class \<LL>butlast.quotients) = multiset_of (map group.iso_class \<KK>butlast.quotients)"
-         using "1.hyps" \<KK>butlast.is_group \<KK>butlast.is_composition_series \<LL>butlast.is_composition_series by auto
-      hence "length (take (length \<KK> - 1) \<KK>) = length (take (length \<LL> - 1) \<LL>)"
-        using \<KK>butlast.quotients_length \<LL>butlast.quotients_length length_map size_multiset_of by metis
-      hence "length (take (length \<KK> - 1) \<KK>) = n - 1" using length\<LL> n'(1) by auto
-      hence length\<KK>:"length \<KK> = n" by (metis Suc_diff_1 \<KK>.notempty butlast_conv_take length_butlast length_greater_0_conv n'(1))
-      
-      -- {* Apply the induction hypothesis on \<KK> and \<HH>butlast *}
-      hence length\<KK>':"length \<KK> > 1" "length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<LL>" using n' sorry 
+      have "length \<KK> > 1"
+      proof (rule ccontr)
+        assume "\<not> length \<KK> > 1"
+        with \<KK>.notempty have "length \<KK> = 1" by (metis One_nat_def Suc_lessI length_greater_0_conv)
+        hence "carrier \<HH>Pm = {\<one>\<^bsub>\<HH>Pm\<^esub>}" using \<KK>.composition_series_length_one \<KK>.composition_series_triv_group by auto
+        hence "carrier \<HH>Pm = {\<one>\<^bsub>G\<^esub>}" unfolding \<HH>Pm_def by auto
+        hence "carrier \<HH>Pm \<subseteq> \<GG> ! (n - 1)" using \<GG>Pnmax.is_subgroup subgroup.one_closed by auto
+        with not\<HH>PmSub\<GG>Pn show False unfolding \<HH>Pm_def by auto
+      qed
+      hence length\<KK>':"length \<KK> - 1 > 0" "length \<KK> - 1 \<le> length \<KK>" by auto 
       have Inteq\<KK>sndlast:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) = \<KK> ! (length \<KK> - 1 - 1)"
       proof -
         have "length \<KK> - 1 - 1 + 1 < length \<KK>" using length\<KK>' by auto
@@ -292,14 +288,27 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
           "\<KK> ! (length \<KK> - 1 - 1) = (map (op \<inter> (\<HH> ! (m - 1))) \<GG>) ! i" "\<KK> ! (length \<KK> - 1 - 1 + 1) = (map (op \<inter> (\<HH> ! (m - 1))) \<GG>) ! (i + 1)"
           using remdups_adj_obtain_adjacency unfolding \<KK>_def by force
         hence "\<KK> ! (length \<KK> - 1 - 1) = \<GG> ! i \<inter> \<HH> ! (m - 1)" "\<KK> ! (length \<KK> - 1 - 1 + 1) = \<GG> ! (i + 1) \<inter> \<HH> ! (m - 1)" by auto
-        hence "\<KK> ! (length \<KK> - 1) = \<GG> ! (i + 1) \<inter> \<HH> ! (m - 1)" using length\<KK>'(2) by (metis Suc_diff_1 Suc_eq_plus1)
+        hence "\<KK> ! (length \<KK> - 1) = \<GG> ! (i + 1) \<inter> \<HH> ! (m - 1)" using length\<KK>'(1) by (metis Suc_diff_1 Suc_eq_plus1)
         hence \<HH>Pmsub\<GG>Pn:"\<HH> ! (m - 1) \<subseteq> \<GG> ! (i + 1)" using \<KK>.last \<KK>.notempty last_conv_nth unfolding \<HH>Pm_def by auto
         from i(1) have "i + 1 < n + 1" unfolding n_def by auto
         moreover have "\<not> (i + 1 \<le> n - 1)" using comp\<GG>.entries_mono n'(2) not\<HH>PmSub\<GG>Pn \<HH>Pmsub\<GG>Pn by fastforce
         ultimately have "n - 1 = i" by auto
         with i show ?thesis by auto
       qed
-      hence \<KK>sndlast:"\<HH>PmInt\<GG>Pn = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" unfolding \<HH>PmInt\<GG>Pn_def \<HH>Pm_def \<KK>_def by auto
+      have "composition_series (G\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>) (take (length \<KK> - 1) \<KK>)"
+        using length\<KK>' \<KK>.composition_series_prefix_closed unfolding \<HH>PmInt\<GG>Pn_def \<HH>Pm_def by fastforce
+      then interpret \<KK>butlast: composition_series \<HH>PmInt\<GG>Pn "(take (length \<KK> - 1) \<KK>)" using Inteq\<KK>sndlast unfolding \<HH>PmInt\<GG>Pn_def by auto
+      from finGbl have finInt:"finite (carrier \<HH>PmInt\<GG>Pn)" unfolding \<HH>PmInt\<GG>Pn_def \<GG>Pn_def by simp
+      moreover have "Suc (length (take (length \<LL> - 1) \<LL>)) \<le> length \<GG>" using length\<LL> unfolding n_def using n'(2) by auto
+      ultimately have multisets\<KK>\<LL>butlast:"multiset_of (map group.iso_class \<LL>butlast.quotients) = multiset_of (map group.iso_class \<KK>butlast.quotients)"
+         using "1.hyps" \<LL>butlast.is_group \<KK>butlast.is_composition_series \<LL>butlast.is_composition_series by auto
+      hence "length (take (length \<KK> - 1) \<KK>) = length (take (length \<LL> - 1) \<LL>)"
+        using \<KK>butlast.quotients_length \<LL>butlast.quotients_length length_map size_multiset_of by metis
+      hence "length (take (length \<KK> - 1) \<KK>) = n - 1" using length\<LL> n'(1) by auto
+      hence length\<KK>:"length \<KK> = n" by (metis Suc_diff_1 \<KK>.notempty butlast_conv_take length_butlast length_greater_0_conv n'(1))
+      
+      -- {* Apply the induction hypothesis on \<KK> and \<HH>butlast *}
+      from Inteq\<KK>sndlast have \<KK>sndlast:"\<HH>PmInt\<GG>Pn = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" unfolding \<HH>PmInt\<GG>Pn_def \<HH>Pm_def \<KK>_def by auto
       from length\<KK> have "Suc (length \<KK>) \<le> length \<GG>" using n'(2) by auto
       hence multisets\<HH>butlast\<KK>:"multiset_of (map group.iso_class \<HH>butlast.quotients) = multiset_of (map group.iso_class \<KK>.quotients)"
         using  "1.hyps" grp\<HH>Pm.is_group finHbl \<HH>butlast.is_composition_series \<KK>.is_composition_series by metis
