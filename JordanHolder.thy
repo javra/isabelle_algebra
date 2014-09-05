@@ -3,7 +3,7 @@
     Maintainer: Jakob von Raumer <jakob.raumer@student.kit.edu>
 *)
 
-theory JordanHoelder
+theory JordanHolder
 imports
   "CompositionSeries"
   "MaximalNormalSubgroups"
