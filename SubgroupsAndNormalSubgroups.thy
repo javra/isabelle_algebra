@@ -17,9 +17,10 @@ text {* A group of order 1 is always the trivial group. *}
 lemma (in group) order_one_triv_iff:
   shows "(order G = 1) = (carrier G = {\<one>})"
 proof
-  assume "order G = 1"
-  find_theorems "{?x}" "card ?y"
-  with one_closed show "carrier G = {\<one>}" unfolding order_def sorry
+  assume order:"order G = 1"
+  hence "finite (carrier G)" unfolding order_def by (metis card_infinite zero_neq_one)
+  
+  with one_closed show "carrier G = {\<one>}" unfolding order_def sorry 
 next
   assume "carrier G = {\<one>}"
   thus "order G = 1" unfolding order_def by auto
@@ -245,41 +246,78 @@ next
   qed
 qed
 
-find_theorems "subgroup (?x <#>\<^bsub>?g\<^esub> ?y) ?g"
+text {* The following is a very basic lemma about subgroups: If restricting the carrier of
+  a group yields a group it's a subgroup of the group we've started with. *}
+
+lemma (in group) restrict_group_imp_subgroup:
+  assumes "H \<subseteq> carrier G" "group (G\<lparr>carrier := H\<rparr>)"
+  shows "subgroup H G"
+proof
+  from assms(1) show "H \<subseteq> carrier G" .
+next
+  fix x y
+  assume "x \<in> H" "y \<in> H"
+  hence "x \<in> carrier (G\<lparr>carrier := H\<rparr>)" "y \<in> carrier (G\<lparr>carrier := H\<rparr>)" by auto
+  with assms(2) show "x \<otimes> y \<in> H" using assms(2) group.is_monoid monoid.m_closed by fastforce
+next
+  show "\<one> \<in> H" using assms(2) group.is_monoid monoid.one_closed by fastforce
+next
+  fix x
+  assume "x \<in> H"
+  hence x:"x \<in> carrier (G\<lparr>carrier := H\<rparr>)" by auto
+  hence "inv\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> x \<in> carrier (G\<lparr>carrier := H\<rparr>)" using assms(2) group.inv_closed by fastforce
+  hence "inv\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> x \<in> carrier G" using x assms(1) by auto
+  moreover have "inv\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> x \<otimes> x = \<one>" using assms(2) group.l_inv x by fastforce
+  moreover have "x \<in> carrier G" using x assms(1) by auto
+  ultimately have "inv\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> x = inv x" using inv_equality[symmetric] by auto
+  thus "inv x \<in> H" using assms(2) group.inv_closed x by fastforce
+qed
 
 text {* A subgroup relation survives factoring by a normal subgroup. *}
-
-lemma (in group) restrict_normality_to_subgroup:
-  assumes "N \<lhd> G" and "N \<subseteq> H" and "subgroup H G"
-  shows "N \<lhd> G\<lparr>carrier := H\<rparr>"
-proof (rule group.normalI)
-  show "group (G\<lparr>carrier := H\<rparr>)" by (metis assms(3) subgroup_imp_group)
-next
-  show "subgroup N (G\<lparr>carrier := H\<rparr>)"
-    using assms is_group normal_imp_subgroup subgroup.subgroup_of_subset by blast
-next
-  show "\<forall>x\<in>carrier (G\<lparr>carrier := H\<rparr>). N #>\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> x = x <#\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N"
-    using assms(1,3) subgroup_imp_subset
-    unfolding normal_def normal_axioms_def r_coset_def l_coset_def by fastforce
-qed
 
 lemma (in group) normal_subgroup_factorize:
   assumes "N \<lhd> G" and "N \<subseteq> H" and "subgroup H G"
   shows "subgroup (rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N) (G Mod N)"
 proof -
-  have "N \<lhd> G\<lparr>carrier := H\<rparr>" using assms by (rule restrict_normality_to_subgroup)
+  interpret GModN: group "G Mod N" using assms(1) by (rule normal.factorgroup_is_group)
+  have "N \<lhd> G\<lparr>carrier := H\<rparr>" using assms by (metis normal_restrict_supergroup)
   hence "group (G\<lparr>carrier := H\<rparr> Mod N)" by (rule normal.factorgroup_is_group)
-  moreover have "carrier (G\<lparr>carrier := H\<rparr> Mod N) \<subseteq> carrier (G Mod N)" unfolding FactGroup_def RCOSETS_def
-    using assms(3) subgroup_imp_subset sorry
-  ultimately show ?thesis sorry
+  hence "group ((G Mod N)\<lparr>carrier := (rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N)\<rparr>)" unfolding FactGroup_def RCOSETS_def r_coset_def sorry
+  moreover have "rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N \<subseteq> carrier (G Mod N)" unfolding FactGroup_def RCOSETS_def r_coset_def
+    using assms(3) subgroup_imp_subset by fastforce
+  ultimately show ?thesis using GModN.is_group group.restrict_group_imp_subgroup by auto
 qed
 
 text {* A normality relation survives factoring by a normal subgroup. *}
 
 lemma (in group) normality_factorization:
-  assumes "N \<lhd> G" and "N \<subseteq> H" and "H \<lhd> G"
+  assumes NG:"N \<lhd> G" and NH:"N \<subseteq> H" and HG:"H \<lhd> G"
   shows "(rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N) \<lhd> (G Mod N)"
-sorry
+proof -
+  from assms(1) interpret GModN: group "G Mod N" by (metis normal.factorgroup_is_group)
+  show ?thesis
+  proof (auto simp: GModN.normal_inv_iff)
+    from assms show "subgroup (rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N) (G Mod N)" using normal_imp_subgroup normal_subgroup_factorize by force
+  next
+    fix U V
+    assume U:"U \<in> carrier (G Mod N)" and V:"V \<in> rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N"
+    then obtain g where g:"g \<in> carrier G" "U = N #> g" unfolding FactGroup_def RCOSETS_def by auto
+    from V obtain h where h:"h \<in> H" "V = N #> h" unfolding FactGroup_def RCOSETS_def r_coset_def by auto
+    hence hG:"h \<in> carrier G" using HG normal_imp_subgroup subgroup.mem_carrier by force
+    hence ghG:"g \<otimes> h \<in> carrier G" using g m_closed by auto
+    from g h have "g \<otimes> h \<otimes> inv g \<in> H" using HG normal_inv_iff by auto
+    moreover have "U <#> V <#> inv\<^bsub>G Mod N\<^esub> U = N #> (g \<otimes> h \<otimes> inv g)"
+    proof -
+      find_theorems "set_inv\<^bsub>?A\<^esub> ?x"
+      from g U have "inv\<^bsub>G Mod N\<^esub> U = N #> inv g" using NG normal.inv_FactGroup normal.rcos_inv by fastforce
+      hence "U <#> V <#> inv\<^bsub>G Mod N\<^esub> U = (N #> g) <#> (N #> h) <#> (N #> inv g)" using g h by simp
+      also have "\<dots> = N #> (g \<otimes> h) <#> (N #> inv g)" using g hG NG normal.rcos_sum by force
+      also have "\<dots> = N #> (g \<otimes> h \<otimes> inv g)" using g inv_closed ghG NG normal.rcos_sum by force
+      finally show ?thesis .
+    qed
+    ultimately show "U <#> V <#> inv\<^bsub>G Mod N\<^esub> U \<in> rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N" unfolding RCOSETS_def r_coset_def by auto
+  qed
+qed
 
 text {* Factoring by a normal subgroups yields the trivial group iff the subgroup is the whole group. *}
 
