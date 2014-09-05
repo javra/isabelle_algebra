@@ -14,13 +14,14 @@ section {* Preliminary lemmas *}
 
 text {* A group of order 1 is always the trivial group. *}
 
+
 lemma (in group) order_one_triv_iff:
   shows "(order G = 1) = (carrier G = {\<one>})"
 proof
   assume order:"order G = 1"
-  hence "finite (carrier G)" unfolding order_def by (metis card_infinite zero_neq_one)
-  
-  with one_closed show "carrier G = {\<one>}" unfolding order_def sorry 
+  then obtain x where x:"carrier G = {x}" unfolding order_def by (auto simp add: card_Suc_eq)
+  hence "\<one> = x" using one_closed by auto
+  with x show "carrier G = {\<one>}" by simp
 next
   assume "carrier G = {\<one>}"
   thus "order G = 1" unfolding order_def by auto
@@ -281,8 +282,12 @@ lemma (in group) normal_subgroup_factorize:
 proof -
   interpret GModN: group "G Mod N" using assms(1) by (rule normal.factorgroup_is_group)
   have "N \<lhd> G\<lparr>carrier := H\<rparr>" using assms by (metis normal_restrict_supergroup)
-  hence "group (G\<lparr>carrier := H\<rparr> Mod N)" by (rule normal.factorgroup_is_group)
-  hence "group ((G Mod N)\<lparr>carrier := (rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N)\<rparr>)" unfolding FactGroup_def RCOSETS_def r_coset_def sorry
+  hence grpHN:"group (G\<lparr>carrier := H\<rparr> Mod N)" by (rule normal.factorgroup_is_group)
+  have "op <#>\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> = (\<lambda>U K. (\<Union>h\<in>U. \<Union>k\<in>K. {h \<otimes>\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> k}))" using set_mult_def by metis
+  moreover have "\<dots> = (\<lambda>U K. (\<Union>h\<in>U. \<Union>k\<in>K. {h \<otimes>\<^bsub>G\<^esub> k}))" by auto
+  moreover have "op <#> = (\<lambda>U K. (\<Union>h\<in>U. \<Union>k\<in>K. {h \<otimes> k}))" using set_mult_def by metis
+  ultimately have "op <#>\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> = op <#>\<^bsub>G\<^esub>" by simp
+  with grpHN have "group ((G Mod N)\<lparr>carrier := (rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N)\<rparr>)" unfolding FactGroup_def by auto
   moreover have "rcosets\<^bsub>G\<lparr>carrier := H\<rparr>\<^esub> N \<subseteq> carrier (G Mod N)" unfolding FactGroup_def RCOSETS_def r_coset_def
     using assms(3) subgroup_imp_subset by fastforce
   ultimately show ?thesis using GModN.is_group group.restrict_group_imp_subgroup by auto
@@ -308,7 +313,6 @@ proof -
     from g h have "g \<otimes> h \<otimes> inv g \<in> H" using HG normal_inv_iff by auto
     moreover have "U <#> V <#> inv\<^bsub>G Mod N\<^esub> U = N #> (g \<otimes> h \<otimes> inv g)"
     proof -
-      find_theorems "set_inv\<^bsub>?A\<^esub> ?x"
       from g U have "inv\<^bsub>G Mod N\<^esub> U = N #> inv g" using NG normal.inv_FactGroup normal.rcos_inv by fastforce
       hence "U <#> V <#> inv\<^bsub>G Mod N\<^esub> U = (N #> g) <#> (N #> h) <#> (N #> inv g)" using g h by simp
       also have "\<dots> = N #> (g \<otimes> h) <#> (N #> inv g)" using g hG NG normal.rcos_sum by force
