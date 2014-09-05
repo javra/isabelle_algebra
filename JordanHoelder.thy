@@ -81,7 +81,6 @@ theorem jordan_hoelder_multisets:
     = multiset_of (map group.iso_class (normal_series.quotients G \<HH>))"
 using assms
 proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
-  print_cases
   case (1 \<GG> \<HH> G)
   then interpret comp\<GG>: composition_series G \<GG> by simp
   from 1 interpret comp\<HH>: composition_series G \<HH> by simp

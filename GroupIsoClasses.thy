@@ -15,11 +15,6 @@ proof
   show "\<And>a. \<lparr>carrier = {a}, mult = (\<lambda>x y. x), one = a\<rparr> \<in> {G. group G}"
   unfolding group_def group_axioms_def monoid_def Units_def by auto
 qed
-print_theorems
-find_theorems "Abs_group ?x"
-find_theorems "Rep_group ?x"
-find_theorems "List.member"
-
 
 definition group_iso_rel :: "'a group \<Rightarrow> 'a group \<Rightarrow> bool"
   where "group_iso_rel G H = (\<exists>\<phi>. \<phi> \<in> Rep_group G \<cong> Rep_group H)"
