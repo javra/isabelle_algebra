@@ -4,20 +4,12 @@
 *)
 
 theory SndSylow
-imports
-  "SubgroupConjugation"
+imports SubgroupConjugation
 begin
 
 section {* The Secondary Sylow Theorems *}
 
 subsection {* Preliminaries *}
-
-lemma card_eq_subset_imp_eq:
-  assumes "A \<subseteq> B"
-  assumes "finite B"
-  assumes "card A = card B"
-  shows "A = B"
-using assms by (metis card_seteq order_refl)
 
 lemma singletonI:
   assumes "\<And>x. x \<in> A \<Longrightarrow> x = y"
@@ -48,7 +40,7 @@ lemma card_subgrp_dvd:
 proof(cases "finite (carrier G)")
   case True
   with assms have "card (rcosets H) * card H = order G" by (metis lagrange)
-  thus ?thesis by (metis dvd_triv_left nat_mult_commute)
+  thus ?thesis by (metis dvd_triv_left mult.commute)
 next
   case False
   hence "order G = 0" unfolding order_def by (metis card_infinite)
@@ -111,7 +103,7 @@ proof -
   from finite_G PG have "finite (rcosets P)" unfolding RCOSETS_def r_coset_def by (metis (lifting) finite.emptyI finite_UN_I finite_insert)
   with orderH' sylow_axioms cardP have "card H'act.fixed_points mod p = card (rcosets P) mod p" unfolding sylow_def sylow_axioms_def by (metis H'act.fixed_point_congruence)
   moreover from finite_G PG order_G cardP  have "card (rcosets P) * p ^ a  = p ^ a * m" by (metis lagrange)
-  with prime_p have "card (rcosets P) = m" by (metis less_nat_zero_code mult_cancel2 mult_is_0 nat_mult_commute order_G zero_less_o_G)
+  with prime_p have "card (rcosets P) = m" by (metis less_nat_zero_code mult_cancel2 mult_is_0 mult.commute order_G zero_less_o_G)
   hence "card (rcosets P) mod p = m mod p" by simp
   moreover from pNotDvdm prime_p have "... \<noteq> 0" by (metis dvd_eq_mod_eq_0)
   ultimately have "card H'act.fixed_points \<noteq> 0" by (metis mod_0)
@@ -172,7 +164,7 @@ proof -
   ultimately have conjSize:"g <# (P #> inv g) \<in> subgroups_of_size (p ^ a)" unfolding conjugation_action_def by simp
   with Qcard have  card:"card (g <# (P #> inv g)) = card Q"  unfolding subgroups_of_size_def by simp
   from conjSize finite_G have "finite (g <# (P #> inv g))" by (metis (mono_tags) finite_subset mem_Collect_eq subgroup_imp_subset subgroups_of_size_def)
-  with g card have "Q = g <# (P #> inv g)" by (metis card_eq_subset_imp_eq)
+  with g card have "Q = g <# (P #> inv g)" by (metis card_subset_eq)
   with g show thesis by (metis that)
 qed
 
@@ -237,7 +229,7 @@ proof -
   with order_G Psize have orderEq:"p ^ a * m = card (subgroups_of_size (p ^ a)) * card (conj.stabilizer P)" by (metis num_eq_card_orbit)
   def k \<equiv> "card (rcosets\<^bsub>G\<lparr>carrier := conj.stabilizer P\<rparr>\<^esub> P)"
   with Psize have "k * p ^ a = card (conj.stabilizer P)" by (metis num_sylow_normalizer)
-  with orderEq have "p ^ a * m = card (subgroups_of_size (p ^ a)) * p ^ a * k" by (auto simp:nat_mult_assoc nat_mult_commute)
+  with orderEq have "p ^ a * m = card (subgroups_of_size (p ^ a)) * p ^ a * k" by (auto simp:mult.assoc mult.commute)
   hence "p ^ a * m = p ^ a * card (subgroups_of_size (p ^ a)) * k" by auto
   with pa_not_zero have "m = card (subgroups_of_size (p ^ a)) * k" by auto
   thus ?thesis unfolding dvd_def by simp
@@ -256,7 +248,8 @@ proof -
   with card have cardP:"card P = p ^ a * k" by (auto simp: dvd_mult_div_cancel)
   hence orderP:"order (G\<lparr>carrier := P\<rparr>) = p ^ a * k" unfolding order_def by simp
   from cardP subgrp order_G have "p ^ a * k dvd p ^ a * m" by (metis card_subgrp_dvd)
-  hence "k dvd m" by (metis nat_mult_commute nat_mult_dvd_cancel_disj' pa_not_zero)
+  hence "k dvd m"
+    by (metis nat_mult_dvd_cancel_disj pa_not_zero) 
   with prime_p pNotDvdm have ndvd:"\<not> (p dvd k)" by (metis dvd.dual_order.trans)
   def PcalM \<equiv> "{s. s \<subseteq> carrier (G\<lparr>carrier := P\<rparr>) \<and> card s = p ^ a}"
   def PRelM \<equiv> "{(N1, N2). N1 \<in> PcalM \<and> N2 \<in> PcalM \<and> (\<exists>g\<in>carrier (G\<lparr>carrier := P\<rparr>). N1 = N2 #>\<^bsub>G\<lparr>carrier := P\<rparr>\<^esub> g)}"
@@ -315,10 +308,10 @@ proof -
       with NG g Qsize have "conjugation_action (p ^ a) g Q = P" unfolding conjugation_action_def using subgroup_imp_subset by force
       with g NfixesQ show "Q = P" by auto
     qed
-    moreover from finite_G PSize have "P \<in> conjP.fixed_points" using local.P_fixed_point_of_P_conj by auto
+    moreover from finite_G PSize have "P \<in> conjP.fixed_points" using P_fixed_point_of_P_conj by auto
     ultimately have "conjP.fixed_points = {P}" by fastforce
     hence one:"card conjP.fixed_points = 1" by (auto simp: card_Suc_eq)
-    with prime_p have "card conjP.fixed_points < p" unfolding prime_def by auto
+    with prime_p have "card conjP.fixed_points < p" unfolding prime_nat_def by auto
     with one show ?thesis using mod_pos_pos_trivial by auto
   qed
   finally show ?thesis.

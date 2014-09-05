@@ -7,7 +7,6 @@ theory GroupAction
 imports
   "~~/src/HOL/Algebra/Bij"
   "~~/src/HOL/Algebra/Sylow"
-  "~~/src/HOL/Algebra/Coset"
 begin
 
 section {* Group Actions *}
@@ -472,7 +471,8 @@ proof -
   with orderG have "finite (carrier G)" unfolding order_def by (metis card_infinite less_nat_zero_code)
   with m have "order G = card (orbit m) * card (stabilizer m)" by (metis orbit_size)
   with orderG m have "p ^ a = card N * card (stabilizer m)" by simp
-  with `card N > 1` show ?thesis by (metis dvd_mult2 gcd_lcm_complete_lattice_nat.bot.extremum_unique nat_dvd_not_less prime prime_def prime_divexp prime_factor zero_less_one)
+  with `card N > 1` show ?thesis
+    by (metis dvd_mult2 dvd_mult_cancel1 nat_dvd_not_less nat_mult_1 prime prime_dvd_power_nat prime_factor_nat prime_nat_def zero_less_one) 
 qed
 
 text {* As a result of the last lemma the only orbits that count modulo
@@ -490,7 +490,7 @@ proof -
   from finM have orbits_fin:"finite orbits" by (rule fin_set_imp_fin_orbits)
   hence fin_parts:"finite big_orbits" "finite {N\<in>orbits. card N = 1}" unfolding big_orbits_def by simp+
   from assms have "\<And>N. N \<in> big_orbits \<Longrightarrow> p dvd card N" unfolding big_orbits_def by (auto simp: p_dvd_orbit_size)
-  hence orbit_div:"\<And>N. N \<in> big_orbits \<Longrightarrow> card N = (card N div p) * p" by (metis dvd_mult_div_cancel nat_mult_commute)
+  hence orbit_div:"\<And>N. N \<in> big_orbits \<Longrightarrow> card N = (card N div p) * p" by (metis dvd_mult_div_cancel mult.commute)
   have "card M = card (\<Union> orbits)" unfolding orbits_def by (metis Union_quotient same_orbit_is_equiv)
   also from orbits_fin have "card (\<Union> orbits) = (\<Sum>N\<in>orbits. card N)" unfolding orbits_def
   apply(rule card_Union_disjoint)
