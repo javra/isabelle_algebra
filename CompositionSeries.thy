@@ -208,7 +208,7 @@ next
   case True
   hence "(length \<GG> - 2) + 1 < length \<GG>" by arith
   with normal last have "\<GG> ! (length \<GG> - 2) \<lhd> G\<lparr>carrier := \<GG> ! ((length \<GG> - 2) + 1)\<rparr>" by auto
-  with True have "\<GG> ! (length \<GG> - 2) \<lhd> G\<lparr>carrier :=  \<GG> ! (length \<GG> - 1)\<rparr>" by (metis Nat.add_diff_assoc comm_monoid_diff_class.add_diff_cancel_left nat_add_commute one_add_one)
+  with True have "\<GG> ! (length \<GG> - 2) \<lhd> G\<lparr>carrier :=  \<GG> ! (length \<GG> - 1)\<rparr>" by (metis Nat.add_diff_assoc comm_monoid_diff_class.add_diff_cancel_left add.commute one_add_one)
   with notempty last show ?thesis using last_conv_nth by force
 qed
 
@@ -228,7 +228,7 @@ proof -
   finally show "hd (take i \<GG>) = {\<one>}".
 next
   from assms have "last (take i \<GG>) = (take i \<GG>) ! (length (take i \<GG>) - 1)" by (metis last_conv_nth neq0_conv notempty take_eq_Nil)
-  also from assms have "... = (take i \<GG>) ! (i - 1)" by (metis length_take min_max.inf_absorb2)
+  also from assms have "... = (take i \<GG>) ! (i - 1)" by (metis length_take min.absorb2)
   also from assms have "... = \<GG> ! (i - 1)" by (metis diff_less nth_take zero_less_one)
   finally show "last (take i \<GG>) = \<GG> ! (i - Suc 0)" by simp
 next
@@ -266,7 +266,7 @@ lemma (in normal_series) quotients_length:
 proof -
   have "length quotients + 1 = length [0..<((length \<GG>) - 1)] + 1" unfolding quotients_def by simp
   also have "... = (length \<GG> - 1) + 1" by (metis diff_zero length_upt)
-  also with notempty have "... = length \<GG>" by (metis add_eq_if comm_monoid_diff_class.diff_cancel length_0_conv nat_add_commute zero_neq_one)
+  also with notempty have "... = length \<GG>" by (metis add_eq_if comm_monoid_diff_class.diff_cancel length_0_conv add.commute zero_neq_one)
   finally show ?thesis .
 qed
 
@@ -277,7 +277,7 @@ proof -
   from assms have lsimp:"length \<GG> - 1 - 1 + 1 = length \<GG> - 1" by auto
   from assms have "quotients \<noteq> []" unfolding quotients_def by auto
   hence "last quotients = quotients ! (length quotients - 1)" by (metis last_conv_nth)
-  also have "\<dots> = quotients ! (length \<GG> - 1 - 1)" by (metis add_diff_cancel_left' quotients_length nat_add_commute)
+  also have "\<dots> = quotients ! (length \<GG> - 1 - 1)" by (metis add_diff_cancel_left' quotients_length add.commute)
   also have "\<dots> = G\<lparr>carrier := \<GG> ! ((length \<GG> - 1 - 1) + 1)\<rparr> Mod \<GG> ! (length \<GG> - 1 - 1)"
     unfolding quotients_def using assms by auto
   also have "\<dots> = G\<lparr>carrier := \<GG> ! (length \<GG> - 1)\<rparr> Mod \<GG> ! (length \<GG> - 1 - 1)" using lsimp by simp
@@ -400,7 +400,7 @@ next
   have "length \<GG> > 1"
   proof (rule ccontr)
     assume "\<not> 1 < length \<GG>"
-    hence "length \<GG> = 1" by (metis nat_add_commute nat_less_cases not_add_less1 quotients_length) 
+    hence "length \<GG> = 1" by (metis add.commute nat_less_cases not_add_less1 quotients_length) 
     hence "carrier G = {\<one>}" using hd last by (metis composition_series_length_one composition_series_triv_group)
     hence "order G = 1" unfolding order_def by auto
     with simple show "False" unfolding simple_group_def simple_group_axioms_def by auto
@@ -412,7 +412,7 @@ next
     hence gt2:"length \<GG> > 2" by simp
     hence ksmall:"k + 1 < length \<GG>" unfolding k_def by auto
     from gt2 have carrier:"\<GG> ! (k + 1) = carrier G" using notempty last last_conv_nth k_def
-      by (metis Nat.add_diff_assoc Nat.diff_cancel `\<not> length \<GG> \<le> 2` nat_add_commute nat_le_linear one_add_one)
+      by (metis Nat.add_diff_assoc Nat.diff_cancel `\<not> length \<GG> \<le> 2` add.commute nat_le_linear one_add_one)
     from normal ksmall have "\<GG> ! k \<lhd> G\<lparr> carrier := \<GG> ! (k + 1)\<rparr>" by simp
     from simplefact ksmall have simplek:"simple_group (G\<lparr>carrier := \<GG> ! (k + 1)\<rparr> Mod \<GG> ! k)" by simp
     from simplefact ksmall have simplek':"simple_group (G\<lparr>carrier := \<GG> ! ((k - 1) + 1)\<rparr> Mod \<GG> ! (k - 1))" by auto
@@ -484,7 +484,7 @@ proof -
     assume i:"i = 1"
     from assms exi have "H \<lhd> G" unfolding H_def by (metis pq_order_subgrp_normal)
     hence groupGH:"group (G Mod H)" by (metis normal.factorgroup_is_group)
-    from primeq have "q \<noteq> 0" by (metis prime_0)
+    from primeq have "q \<noteq> 0" by (metis zero_not_prime_nat)
     from HsubG finite orderG have "card (rcosets H) * card H = q * p" unfolding subgroups_of_size_def using lagrange by simp
     with Hsize have "card (rcosets H) * q = q * p" unfolding subgroups_of_size_def by simp
     with `q \<noteq> 0` have "card (rcosets H) = p" by auto
@@ -716,24 +716,24 @@ next
   with notempty show False..
 next
   -- {* Show, that the head of the reduced list is still the trivial group *}
-  have "\<GG> = {\<one>} # tl \<GG>" using notempty hd by (metis hd.simps neq_Nil_conv tl.simps(2))
+  have "\<GG> = {\<one>} # tl \<GG>" using notempty hd by (metis list.sel(1,3) neq_Nil_conv)
   hence "map (op \<inter> K) \<GG> = map (op \<inter> K) ({\<one>} # tl \<GG>)" by simp
   hence "remdups_adj (map (op \<inter> K) \<GG>) = remdups_adj ((K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>)))" by simp
   also have "\<dots> = (K \<inter> {\<one>}) # tl (remdups_adj ((K \<inter> {\<one>}) # (map (op \<inter> K) (tl \<GG>))))" by simp
-  finally have "hd (remdups_adj (map (op \<inter> K) \<GG>)) = K \<inter> {\<one>}" using hd.simps by metis
+  finally have "hd (remdups_adj (map (op \<inter> K) \<GG>)) = K \<inter> {\<one>}" using list.sel(1) by metis
   thus "hd (remdups_adj (map (op \<inter> K) \<GG>)) = {\<one>\<^bsub>G\<lparr>carrier := K\<rparr>\<^esub>}" 
     using KG normal_imp_subgroup subgroup.one_closed by force
 next
   -- {* Show that the last entry is really $K \<inter> G$. Since we don't have a lemma ready to talk about the
     last entry of a reduced list, we reverse the list twice. *}
-  have "rev \<GG> = (carrier G) # tl (rev \<GG>)" by (metis hd.simps last last_rev neq_Nil_conv notempty rev_is_Nil_conv rev_rev_ident tl.simps(2))
+  have "rev \<GG> = (carrier G) # tl (rev \<GG>)" by (metis list.sel(1,3) last last_rev neq_Nil_conv notempty rev_is_Nil_conv rev_rev_ident)
   hence "rev (map (op \<inter> K) \<GG>) = map (op \<inter> K) ((carrier G) # tl (rev \<GG>))" by (metis rev_map)
   hence rev:"rev (map (op \<inter> K) \<GG>) = (K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>)))" by simp
   have "last (remdups_adj (map (op \<inter> K) \<GG>)) = hd (rev (remdups_adj (map (op \<inter> K) \<GG>)))"
     by (metis hd_rev map_is_Nil_conv notempty remdups_adj_Nil_iff)
   also have "\<dots> = hd (remdups_adj (rev (map (op \<inter> K) \<GG>)))" by (metis remdups_adj_rev)
   also have "\<dots> = hd (remdups_adj ((K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>)))))" by (metis rev)
-  also have "\<dots> = hd ((K \<inter> (carrier G)) # (remdups_adj ((K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>))))))" by (metis hd.simps remdups_adj_Cons_alt)
+  also have "\<dots> = hd ((K \<inter> (carrier G)) # (remdups_adj ((K \<inter> (carrier G)) # (map (op \<inter> K) (tl (rev \<GG>))))))" by (metis list.sel(1) remdups_adj_Cons_alt)
   also have "\<dots> = K" using KG normal_imp_subgroup subgroup_imp_subset by force
   finally show "last (remdups_adj (map (op \<inter> K) \<GG>)) = carrier (G\<lparr>carrier := K\<rparr>)" by auto
 next

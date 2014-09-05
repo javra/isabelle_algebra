@@ -5,7 +5,7 @@
 
 theory GroupIsoClasses
 imports
-  "Group"
+  "Groups"
   "List"
   "Coset"
 begin

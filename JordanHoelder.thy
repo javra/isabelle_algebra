@@ -175,9 +175,9 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       case False 
       def \<HH>PmInt\<GG>Pn \<equiv> "G\<lparr>carrier := \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1)\<rparr>"
       interpret \<GG>Pnmax: max_normal_subgroup "\<GG> ! (n - 1)" G unfolding n_def
-        by (metis add_lessD1 diff_diff_add n'(3) nat_add_commute one_add_one 1(3) comp\<GG>.snd_to_last_max_normal)
+        by (metis add_lessD1 diff_diff_add n'(3) add.commute one_add_one 1(3) comp\<GG>.snd_to_last_max_normal)
       interpret \<HH>Pmmax: max_normal_subgroup "\<HH> ! (m - 1)" G unfolding m_def
-        by (metis add_lessD1 diff_diff_add m'(3) nat_add_commute one_add_one 1(3) comp\<HH>.snd_to_last_max_normal)
+        by (metis add_lessD1 diff_diff_add m'(3) add.commute one_add_one 1(3) comp\<HH>.snd_to_last_max_normal)
       have \<HH>PmnormG:"\<HH> ! (m - 1) \<lhd> G" using comp\<HH>.normal_series_snd_to_last m'(4) unfolding m_def by auto
       have \<GG>PnnormG:"\<GG> ! (n - 1) \<lhd> G" using comp\<GG>.normal_series_snd_to_last n'(6) unfolding n_def by auto
       have \<HH>Pmint\<GG>PnnormG:"\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1) \<lhd> G" using \<HH>PmnormG \<GG>PnnormG by (rule comp\<GG>.normal_subgroup_intersect)

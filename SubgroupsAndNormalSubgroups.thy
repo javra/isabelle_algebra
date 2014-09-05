@@ -332,13 +332,14 @@ proof
   assume "carrier (G Mod H) = {\<one>\<^bsub>G Mod H\<^esub>}"
   moreover with assms lagrange have "order (G Mod H) * card H = order G" unfolding FactGroup_def order_def using is_subgroup by force
   ultimately have "card H = order G" unfolding order_def by auto
-  thus "H = carrier G" using subgroup_imp_subset is_subgroup assms unfolding order_def by (metis card_eq_subset_imp_eq)
+  thus "H = carrier G" using subgroup_imp_subset is_subgroup assms card_subset_eq unfolding order_def
+    by metis
 next
   from assms have ordergt0:"order G > 0" unfolding order_def by (metis subgroup.finite_imp_card_positive subgroup_self)
   assume "H = carrier G"
   hence "card H = order G" unfolding order_def by simp
   with assms is_subgroup lagrange have "card (rcosets H) * order G = order G" by metis
-  with ordergt0 have "card (rcosets H) = 1" by (metis mult_eq_self_implies_10 nat_mult_commute neq0_conv)
+  with ordergt0 have "card (rcosets H) = 1" by (metis mult_eq_self_implies_10 mult.commute neq0_conv)
   hence "order (G Mod H) = 1" unfolding order_def FactGroup_def by auto
   thus "carrier (G Mod H) = {\<one>\<^bsub>G Mod H\<^esub>}" using factorgroup_is_group by (metis group.order_one_triv_iff)
 qed

@@ -45,7 +45,7 @@ next
     moreover from HG have "H \<subseteq> carrier G" unfolding subgroup_def by simp
     moreover from prime have "card (carrier G) > 1" unfolding order_def prime_def..
     hence "finite (carrier G)" by (auto simp:card_ge_0_finite)
-    ultimately show ?thesis unfolding order_def by (metis card_eq_subset_imp_eq)
+    ultimately show ?thesis unfolding order_def by (metis card_subset_eq)
   qed
 qed
 
