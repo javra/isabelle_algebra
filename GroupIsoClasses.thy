@@ -10,6 +10,10 @@ imports
   "Coset"
 begin
 
+section {* Isomorphism Classes of Groups *}
+
+text {* We construct a quotient type for isomorphism classes of groups. *}
+
 typedef 'a group = "{G :: 'a monoid. group G}"
 proof
   show "\<And>a. \<lparr>carrier = {a}, mult = (\<lambda>x y. x), one = a\<rparr> \<in> {G. group G}"

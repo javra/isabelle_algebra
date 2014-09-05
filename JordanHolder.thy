@@ -11,33 +11,16 @@ imports
   "GroupIsoClasses"
 begin
 
+section {* The Jordan-H\"older Theorem *}
+
 locale jordan_hoelder = group
   + comp\<HH>: composition_series G \<HH>
   + comp\<GG>: composition_series G \<GG> for \<HH> and \<GG>
   + assumes finite:"finite (carrier G)"
 
-lemma (in group) setmult_lcos_assoc:
-     "\<lbrakk>H \<subseteq> carrier G; K \<subseteq> carrier G; x \<in> carrier G\<rbrakk>
-      \<Longrightarrow> (x <#\<^bsub>G\<^esub> K) <#> H = x <# (K <#> H)"
-by (force simp add: l_coset_def set_mult_def m_assoc)
-
-lemma (in group) normal_subgroup_setmult:
-  assumes M:"M \<lhd> G" and N:"N \<lhd> G"
-  shows "M <#> N \<lhd> G"
-proof (rule normalI, auto del:equalityI)
-  from assms interpret sndiso:second_isomorphism_grp M G N
-    unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def normal_def by auto
-  show "subgroup (M <#> N) G" by (rule sndiso.normal_set_mult_subgroup)
-next
-  fix g
-  assume g:"g \<in> carrier G"
-  have "M <#> N #> g = M <#> (N #> g)" using g M N setmult_rcos_assoc by (metis normal_inv_iff subgroup_imp_subset)
-  also have "\<dots> = M <#> (g <#\<^bsub>G\<^esub> N)" using N g by (metis normal.coset_eq)
-  also have "\<dots> = (M #> g) <#> N" using M N g by (metis normal_imp_subgroup rcos_assoc_lcos subgroup_imp_subset)
-  also have "\<dots> = (g <#\<^bsub>G\<^esub> M) <#> N" using M g by (metis normal.coset_eq)
-  also have "\<dots> = g <# (M <#> N)" using g M N setmult_lcos_assoc by (metis normal_inv_iff subgroup_imp_subset)
-  finally show " M <#> N #> g = g <# (M <#> N)".
-qed
+text {* Before we finally start the actual proof of the theorem, one last lemma: Cancelling
+  the last entry of a normal series results in a normal series with quotients being all but the last
+  of the original ones. *}
 
 lemma (in normal_series) quotients_butlast:
   assumes "length \<GG> > 1"
@@ -200,7 +183,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def by metis
       have "\<GG> ! (n - 1) \<noteq> (\<HH> ! (m - 1)) <#>\<^bsub>G\<^esub> (\<GG> ! (n - 1))" using \<HH>PmSubSetmult not\<HH>PmSub\<GG>Pn by auto
       hence set_multG:"(\<HH> ! (m - 1)) <#>\<^bsub>G\<^esub> (\<GG> ! (n - 1)) = carrier G"
-        using \<GG>Pnmax.max_normal \<GG>Pnmax.is_normal \<HH>PmnormG comp\<GG>.normal_subgroup_setmult \<GG>PnSubSetmult by metis
+        using \<GG>Pnmax.max_normal \<GG>Pnmax.is_normal \<HH>PmnormG comp\<GG>.normal_subgroup_set_mult_closed \<GG>PnSubSetmult by metis
       then obtain \<phi> where "\<phi> \<in> (\<GG>Pn Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<HH> ! (m - 1))"
         using second_isomorphism_grp.normal_intersection_quotient_isom \<HH>PmnormG \<GG>Pnmax.is_normal normal_imp_subgroup
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def \<GG>Pn_def by metis
@@ -222,7 +205,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def by metis
       have "\<HH> ! (m - 1) \<noteq> (\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1))" using \<GG>PnSubSetmult' not\<GG>PnSub\<HH>Pm by auto
       hence set_multG:"(\<GG> ! (n - 1)) <#>\<^bsub>G\<^esub> (\<HH> ! (m - 1)) = carrier G"
-        using \<HH>Pmmax.max_normal \<HH>Pmmax.is_normal \<GG>PnnormG comp\<GG>.normal_subgroup_setmult \<HH>PmSubSetmult' by metis
+        using \<HH>Pmmax.max_normal \<HH>Pmmax.is_normal \<GG>PnnormG comp\<GG>.normal_subgroup_set_mult_closed \<HH>PmSubSetmult' by metis
       from set_multG obtain \<psi> where "\<psi> \<in> (\<HH>Pm Mod (\<GG> ! (n - 1) \<inter> \<HH> ! (m - 1))) \<cong> (G\<lparr>carrier := carrier G\<rparr> Mod \<GG> ! (n - 1))"
         using second_isomorphism_grp.normal_intersection_quotient_isom \<GG>PnnormG \<HH>Pmmax.is_normal normal_imp_subgroup
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def \<HH>Pm_def by metis

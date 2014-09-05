@@ -9,9 +9,9 @@ imports
   "MaximalNormalSubgroups"
 begin
 
-sledgehammer_params[provers = e spass remote_vampire remote_z3]
+section {* Normal series and Composition series *}
 
-section {* Preliminaries *}
+subsection {* Preliminaries *}
 
 text {* A subgroup which is unique in cardinality is normal: *}
 
@@ -64,7 +64,7 @@ proof -
   qed
 qed
 
-text {* This unique subgroup is normal *}
+text {* ... And this unique subgroup is normal. *}
 
 corollary (in group) pq_order_subgrp_normal:
   assumes finite:"finite (carrier G)"
@@ -73,13 +73,13 @@ corollary (in group) pq_order_subgrp_normal:
   shows "(THE Q. Q \<in> subgroups_of_size q) \<lhd> G"
 using assms by (metis pq_order_unique_subgrp unique_sizes_subgrp_normal)
 
-text {* The trivial subgroup is normal in every group *}
+text {* The trivial subgroup is normal in every group. *}
 
 lemma (in group) trivial_subgroup_is_normal:
   shows "{\<one>} \<lhd> G"
 unfolding normal_def normal_axioms_def r_coset_def l_coset_def by (auto intro: normalI subgroupI simp: is_group)
 
-section{*Normal Series*}
+subsection {* Normal Series *}
 
 text {* We define a normal series as a locale which fixes one group
 @{term G} and a list @{term \<GG>} of subsets of @{term G}'s carrier. This list
@@ -324,9 +324,9 @@ next
   qed
 qed
 
-section {* Composition Series *}
+subsection {* Composition Series *}
 
-text {* A composition series is a normal series where all consecutie factor groups are simple: *}
+text {* A composition series is a normal series where all consecutive factor groups are simple: *}
 
 locale composition_series = normal_series +
   assumes simplefact:"\<And>i. i + 1 <  length \<GG> \<Longrightarrow> simple_group (G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i)"
@@ -335,7 +335,7 @@ lemma (in composition_series) is_composition_series:
   shows "composition_series G \<GG>"
 by (rule composition_series_axioms)
 
-text {* A composition series for a group $G$ has length one iff $G$ is the trivial group. *}
+text {* A composition series for a group $G$ has length one if and only if $G$ is the trivial group. *}
 
 lemma (in composition_series) composition_series_length_one:
   shows "(length \<GG> = 1) = (\<GG> = [{\<one>}])"
@@ -606,7 +606,7 @@ next
   }
 qed
 
-text {* For the next lemma we need a few facts about remdups_adj. *}
+text {* For the next lemma we need a few facts about removing adjacent duplicates. *}
 
 lemma remdups_adj_obtain_adjacency:
   assumes "i + 1 < length (remdups_adj xs)" "length xs > 0"
@@ -684,7 +684,7 @@ next
   qed
 qed
 
-(* TODO: This lemma will be there in future versions of List.thy *)
+(* This lemma will be there in future versions of List.thy *)
 (* This proof is by Manuel Eberl. *)
 
 lemma hd_remdups_adj[simp]: "hd (remdups_adj xs) = hd xs"
