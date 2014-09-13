@@ -76,7 +76,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     with comp\<GG>.notempty have  "length \<GG> = 1 \<or> length \<GG> = 2" by simp
     thus ?thesis
     proof auto
-      -- {* First trivial case: \<GG> is the trivial group. *}
+      -- {* First trivial case: @{text \<GG>} is the trivial group. *}
       assume "length \<GG> = Suc 0"
       hence length:"length \<GG> = 1" by simp
       hence "length [] + 1 = length \<GG>" by auto
@@ -85,7 +85,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       with length char\<GG> have "\<GG> = \<HH>" using comp\<HH>.composition_series_triv_group by simp
       thus ?thesis by simp
     next
-      -- {* Second trivial case: \<GG> is simple. *}
+      -- {* Second trivial case: @{text \<GG>} is simple. *}
       assume "length \<GG> = 2"
       hence \<GG>char:"\<GG> = [{\<one>\<^bsub>G\<^esub>}, carrier G]" by (metis comp\<GG>.length_two_unique)
       hence simple:"simple_group G" by (metis comp\<GG>.composition_series_simple_group)
@@ -95,9 +95,9 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     qed
   next
     case False
-    -- {* Non-trivial case: \<GG> has length at least 3. *}
+    -- {* Non-trivial case: @{text \<GG>} has length at least 3. *}
     hence length:"length \<GG> \<ge> 3" by simp
-    -- {* First we show that \<HH> must have a length of at least 3. *}
+    -- {* First we show that @{text \<HH>} must have a length of at least 3. *}
     hence "\<not> simple_group G" using comp\<GG>.composition_series_simple_group by auto
     hence "\<HH> \<noteq> [{\<one>\<^bsub>G\<^esub>}, carrier G]" using comp\<HH>.composition_series_simple_group by auto
     hence "length \<HH> \<noteq> 2" using comp\<HH>.length_two_unique by auto
@@ -127,9 +127,9 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
     have ltakem:"m = length (take m \<HH>)" using length_take m'(2) by auto
     show ?thesis
     proof (cases "\<HH> ! (m - 1)  = \<GG> ! (n - 1)")
-      -- {* If \<HH> ! (l - 1) = \<GG> ! 1, everything is simple... *}
+      -- {* If @{term "\<HH> ! (l - 1) = \<GG> ! 1"}, everything is simple... *}
       case True
-      -- {* The last quotients of $\<GG> and \<HH>$ are equal. *}
+      -- {* The last quotients of @{term \<GG>} and @{term \<HH>} are equal. *}
       have lasteq:"last comp\<GG>.quotients = last comp\<HH>.quotients"
       proof -
         from length have lg:"length \<GG> - 1 - 1 + 1 = length \<GG> - 1" by (metis Suc_diff_1 Suc_eq_plus1 n'(1) n_def)
@@ -174,7 +174,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       have not\<HH>PmSub\<GG>Pn:"\<not> (\<HH> ! (m - 1) \<subseteq> \<GG> ! (n - 1))" using \<HH>Pmmax.max_normal \<GG>PnnormG False[symmetric] \<GG>Pnmax.proper by simp
       have not\<GG>PnSub\<HH>Pm:"\<not> (\<GG> ! (n - 1) \<subseteq> \<HH> ! (m - 1))" using \<GG>Pnmax.max_normal \<HH>PmnormG False \<HH>Pmmax.proper by simp
       
-      -- {* Show that $G / \<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))$ is a simple group. *}
+      -- {* Show that @{term "G Mod (\<HH> ! (m - 1) \<inter> \<GG> ! (n - 1))"} is a simple group. *}
       have \<HH>PmSubSetmult:"\<HH> ! (m - 1) \<subseteq> \<HH> ! (m - 1) <#>\<^bsub>G\<^esub> \<GG> ! (n - 1)"
         using second_isomorphism_grp.H_contained_in_set_mult \<GG>Pnmax.is_normal \<HH>PmnormG normal_imp_subgroup
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def by metis
@@ -196,7 +196,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
         using simple_group.iso_simple grp\<GG>PnMod\<HH>Pmint\<GG>Pn.is_group by auto
       interpret grpGMod\<HH>Pm: group "(G Mod \<HH> ! (m - 1))" by (metis \<HH>PmnormG normal.factorgroup_is_group)
 
-      -- {* Show analogues of the previous statements for $\<HH> ! (m - 1)$ instead of $\<GG> ! (n - 1)$. *}
+      -- {* Show analogues of the previous statements for @{term "\<HH> ! (m - 1)"} instead of @{term "\<GG> ! (n - 1)"}. *}
       have \<HH>PmSubSetmult':"\<HH> ! (m - 1) \<subseteq> \<GG> ! (n - 1) <#>\<^bsub>G\<^esub> \<HH> ! (m - 1)"
         using second_isomorphism_grp.S_contained_in_set_mult \<GG>Pnmax.is_normal \<HH>PmnormG normal_imp_subgroup
         unfolding second_isomorphism_grp_def second_isomorphism_grp_axioms_def max_normal_subgroup_def by metis
@@ -219,14 +219,13 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       interpret grpGMod\<GG>Pn: group "(G Mod \<GG> ! (n - 1))" by (metis \<GG>PnnormG normal.factorgroup_is_group)
       
       -- {* Instantiate several composition series used to build up the equality of quotient multisets. *}
-
       def \<KK> \<equiv> "remdups_adj (map (op \<inter> (\<HH> ! (m - 1))) \<GG>)"
       def \<LL> \<equiv> "remdups_adj (map (op \<inter> (\<GG> ! (n - 1))) \<HH>)"
       interpret \<KK>: composition_series \<HH>Pm \<KK> using comp\<GG>.intersect_normal 1(3) \<HH>PmnormG unfolding \<KK>_def \<HH>Pm_def by auto
       interpret \<LL>: composition_series \<GG>Pn \<LL> using comp\<HH>.intersect_normal 1(3) \<GG>PnnormG unfolding \<LL>_def \<GG>Pn_def by auto
 
 
-      -- {* Apply the induction hypothesis on \<GG>butlast and \<LL> *}
+      -- {* Apply the induction hypothesis on @{text \<GG>butlast} and @{text \<LL>} *}
       from n'(2) have "Suc (length (take n \<GG>)) \<le> length \<GG>" by auto
       hence multisets\<GG>butlast\<LL>:"multiset_of (map group.iso_class \<GG>butlast.quotients) = multiset_of (map group.iso_class \<LL>.quotients)"
         using  "1.hyps" grp\<GG>Pn.is_group finGbl \<GG>butlast.is_composition_series \<LL>.is_composition_series by metis
@@ -251,7 +250,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       then interpret \<LL>butlast: composition_series \<HH>PmInt\<GG>Pn "take (length \<LL> - 1) \<LL>" using length\<LL>' \<LL>.composition_series_prefix_closed by metis
       from `length \<LL> > 1` have quots\<LL>notemtpy:"\<LL>.quotients \<noteq> []" unfolding \<LL>.quotients_def by auto
 
-      -- {* Apply the induction hypothesis on \<LL>butlast and \<KK>butlast *}
+      -- {* Apply the induction hypothesis on @{text \<LL>butlast} and @{text \<KK>butlast} *}
       have "length \<KK> > 1"
       proof (rule ccontr)
         assume "\<not> length \<KK> > 1"
@@ -289,7 +288,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
       hence "length (take (length \<KK> - 1) \<KK>) = n - 1" using length\<LL> n'(1) by auto
       hence length\<KK>:"length \<KK> = n" by (metis Suc_diff_1 \<KK>.notempty butlast_conv_take length_butlast length_greater_0_conv n'(1))
       
-      -- {* Apply the induction hypothesis on \<KK> and \<HH>butlast *}
+      -- {* Apply the induction hypothesis on @{text \<KK>} and @{text \<HH>butlast} *}
       from Inteq\<KK>sndlast have \<KK>sndlast:"\<HH>PmInt\<GG>Pn = (\<HH>Pm\<lparr>carrier := \<KK> ! (length \<KK> - 1 - 1)\<rparr>)" unfolding \<HH>PmInt\<GG>Pn_def \<HH>Pm_def \<KK>_def by auto
       from length\<KK> have "Suc (length \<KK>) \<le> length \<GG>" using n'(2) by auto
       hence multisets\<HH>butlast\<KK>:"multiset_of (map group.iso_class \<HH>butlast.quotients) = multiset_of (map group.iso_class \<KK>.quotients)"
@@ -333,8 +332,7 @@ proof (induction "length \<GG>" arbitrary: \<GG> \<HH> G rule: full_nat_induct)
   qed
 qed
 
-text {* As a corollary, we see that the composition series of a fixed group
-all have the same length. *}
+text {* As a corollary, we see that the composition series of a fixed group all have the same length. *}
 
 corollary (in jordan_hoelder) jordan_hoelder_size:
   shows "length \<GG> = length \<HH>"

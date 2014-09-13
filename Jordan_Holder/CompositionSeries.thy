@@ -254,7 +254,7 @@ proof -
   with HG show ?thesis unfolding H_def by (metis append_Cons append_Nil normal_series_extend)
 qed
 
-text {* The following defines the list of all quotient groups of the normal_series: *}
+text {* The following defines the list of all quotient groups of the normal series: *}
 
 definition (in normal_series) quotients
   where "quotients = map (\<lambda>i. G\<lparr>carrier := \<GG> ! (i + 1)\<rparr> Mod \<GG> ! i) [0..<((length \<GG>) - 1)]"
@@ -724,7 +724,7 @@ next
   thus "hd (remdups_adj (map (op \<inter> K) \<GG>)) = {\<one>\<^bsub>G\<lparr>carrier := K\<rparr>\<^esub>}" 
     using KG normal_imp_subgroup subgroup.one_closed by force
 next
-  -- {* Show that the last entry is really $K \<inter> G$. Since we don't have a lemma ready to talk about the
+  -- {* Show that the last entry is really @{text "K \<inter> G"}. Since we don't have a lemma ready to talk about the
     last entry of a reduced list, we reverse the list twice. *}
   have "rev \<GG> = (carrier G) # tl (rev \<GG>)" by (metis list.sel(1,3) last last_rev neq_Nil_conv notempty rev_is_Nil_conv rev_rev_ident)
   hence "rev (map (op \<inter> K) \<GG>) = map (op \<inter> K) ((carrier G) # tl (rev \<GG>))" by (metis rev_map)
