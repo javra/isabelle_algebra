@@ -6,7 +6,7 @@
 theory SimpleGroups
 imports
   "SubgroupsAndNormalSubgroups"
-  "SndSylow"
+  "../Secondary_Sylow/SndSylow"
   "SndIsomorphismGrp"
 begin
 

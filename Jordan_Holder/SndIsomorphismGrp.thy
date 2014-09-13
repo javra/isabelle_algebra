@@ -6,7 +6,7 @@
 theory SndIsomorphismGrp
 imports
     "~~/src/HOL/Algebra/Coset"
-    "SubgroupConjugation"
+    "../Secondary_Sylow/SubgroupConjugation"
 begin
 
 section {* The Second Isomorphism Theorem for Groups *}

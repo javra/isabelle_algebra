@@ -1,0 +1,14 @@
+chapter AFP
+
+session Jordan_Holder (AFP) = "HOL-Algebra" +
+  options [timeout = 600]
+  theories
+    CompositionSeries
+    GroupIsoClasses
+    JordanHolder
+    MaximalNormalSubgroups
+    SimpleGroups
+    SndIsomorphismGrp
+  document_files
+  	"root.bib"
+    "root.tex"

@@ -6,7 +6,7 @@
 theory SubgroupsAndNormalSubgroups
 imports
   "Coset"
-  "SndSylow"
+  "../Secondary_Sylow/SndSylow"
   "SndIsomorphismGrp"
 begin
 
